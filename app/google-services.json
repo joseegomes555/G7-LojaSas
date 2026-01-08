@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "376625208174",
+    "project_id": "lojasas-86241",
+    "storage_bucket": "lojasas-86241.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:376625208174:android:3330c72886cf8206947f7f",
+        "android_client_info": {
+          "package_name": "ipca.lojasas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAYY7zgCi_1jKR5crBD1tyTPZ3zKsLZWWA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
