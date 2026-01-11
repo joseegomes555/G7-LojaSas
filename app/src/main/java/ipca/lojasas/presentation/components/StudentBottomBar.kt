@@ -1,4 +1,4 @@
-package ipca.lojasas.components
+package ipca.lojasas.presentation.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home

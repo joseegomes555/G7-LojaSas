@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Beneficiarios
+package ipca.lojasas.presentation.screens.Beneficiarios
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

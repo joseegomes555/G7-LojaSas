@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Students
+package ipca.lojasas.presentation.screens.Students
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,7 +20,7 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import ipca.lojasas.Routes
-import ipca.lojasas.components.StudentBottomBar
+import ipca.lojasas.presentation.components.StudentBottomBar
 import ipca.lojasas.di.AppModule
 import ipca.lojasas.presentation.viewmodel.StudentViewModel
 import ipca.lojasas.ui.theme.IPCAGreen

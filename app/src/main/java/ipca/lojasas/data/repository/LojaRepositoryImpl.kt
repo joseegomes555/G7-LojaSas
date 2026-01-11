@@ -4,9 +4,12 @@ import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import ipca.lojasas.domain.model.*
-import ipca.lojasas.domain.repository.LojaRepository
 import ipca.lojasas.domain.model.Beneficiario
+import ipca.lojasas.domain.model.ItemPedido
+import ipca.lojasas.domain.model.Lote
+import ipca.lojasas.domain.model.Pedido
+import ipca.lojasas.domain.model.Produto
+import ipca.lojasas.domain.repository.LojaRepository
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -44,7 +47,9 @@ class LojaRepositoryImpl(
         val listener = db.collection("pedidos")
             .whereEqualTo("uid", uid)
             .addSnapshotListener { value, e ->
-                if (e != null) { return@addSnapshotListener }
+                if (e != null) {
+                    return@addSnapshotListener
+                }
                 val lista = mutableListOf<Pedido>()
                 value?.documents?.forEach { doc ->
                     doc.toObject(Pedido::class.java)?.let { p ->
@@ -93,7 +98,7 @@ class LojaRepositoryImpl(
 
                 // Ordenação em memória (FIFO)
                 val lotesOrdenados = snapshot.documents.sortedBy {
-                    it.getTimestamp("dataValidade") ?: Timestamp.now()
+                    it.getTimestamp("dataValidade") ?: Timestamp.Companion.now()
                 }
 
                 for (doc in lotesOrdenados) {
@@ -140,7 +145,7 @@ class LojaRepositoryImpl(
                         "dataValidade" to Timestamp(cal.time),
                         "categoria" to "Reposição",
                         "origem" to "Devolução",
-                        "dataEntrada" to Timestamp.now()
+                        "dataEntrada" to Timestamp.Companion.now()
                     )
                     db.collection("lotes").add(lote)
                 }

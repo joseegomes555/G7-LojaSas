@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Beneficiarios
+package ipca.lojasas.presentation.screens.Beneficiarios
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
 import ipca.lojasas.Routes
-import ipca.lojasas.components.AppBottomBar
+import ipca.lojasas.presentation.components.AppBottomBar
 import ipca.lojasas.ui.theme.IPCAGreen
 
 // Modelo atualizado com mais dados

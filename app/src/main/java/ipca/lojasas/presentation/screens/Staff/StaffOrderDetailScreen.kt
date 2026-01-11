@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Staff
+package ipca.lojasas.presentation.screens.Staff
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
