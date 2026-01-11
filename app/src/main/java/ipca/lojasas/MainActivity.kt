@@ -10,16 +10,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import ipca.lojasas.screens.*
-import ipca.lojasas.screens.Beneficiarios.BeneficiarioDetailScreen
-import ipca.lojasas.screens.Beneficiarios.BeneficiariosScreen
-import ipca.lojasas.screens.Staff.StaffDashboardScreen
-import ipca.lojasas.screens.Staff.StaffLoginScreen
-import ipca.lojasas.screens.Staff.StaffOrderDetailScreen
-import ipca.lojasas.screens.Students.StudentDashboardScreen
-import ipca.lojasas.screens.Students.StudentLoginScreen
-import ipca.lojasas.screens.Students.StudentOrderScreen
-import ipca.lojasas.screens.Students.StudentProfileScreen
+import ipca.lojasas.presentation.screens.AuthChoiceScreen
+import ipca.lojasas.presentation.screens.Beneficiarios.BeneficiarioDetailScreen
+import ipca.lojasas.presentation.screens.Beneficiarios.BeneficiariosScreen
+import ipca.lojasas.presentation.screens.Staff.StaffDashboardScreen
+import ipca.lojasas.presentation.screens.Staff.StaffLoginScreen
+import ipca.lojasas.presentation.screens.Staff.StaffOrderDetailScreen
+import ipca.lojasas.presentation.screens.StockScreen
+import ipca.lojasas.presentation.screens.Students.StudentDashboardScreen
+import ipca.lojasas.presentation.screens.Students.StudentLoginScreen
+import ipca.lojasas.presentation.screens.Students.StudentOrderScreen
+import ipca.lojasas.presentation.screens.Students.StudentProfileScreen
 import ipca.lojasas.ui.theme.LojaSasTheme
 
 // Definição de todas as rotas da aplicação

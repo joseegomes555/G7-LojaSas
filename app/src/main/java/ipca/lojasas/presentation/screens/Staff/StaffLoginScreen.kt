@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Staff
+package ipca.lojasas.presentation.screens.Staff
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*

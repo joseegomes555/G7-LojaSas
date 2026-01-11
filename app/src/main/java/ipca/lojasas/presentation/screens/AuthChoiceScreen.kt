@@ -1,5 +1,6 @@
-package ipca.lojasas.screens
+package ipca.lojasas.presentation.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -56,7 +57,7 @@ fun AuthChoiceScreen(
                 onClick = onStaffClick,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = IPCAGreen),
-                border = androidx.compose.foundation.BorderStroke(1.dp, IPCAGreen),
+                border = BorderStroke(1.dp, IPCAGreen),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Text("Sou Colaborador (SAS)")

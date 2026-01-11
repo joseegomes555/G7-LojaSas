@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Students
+package ipca.lojasas.presentation.screens.Students
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import ipca.lojasas.Routes
-import ipca.lojasas.components.StudentBottomBar
+import ipca.lojasas.presentation.components.StudentBottomBar
 import ipca.lojasas.di.AppModule
 import ipca.lojasas.presentation.viewmodel.StudentViewModel
 import ipca.lojasas.ui.theme.IPCAGreen

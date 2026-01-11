@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Staff
+package ipca.lojasas.presentation.screens.Staff
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import ipca.lojasas.Routes
-import ipca.lojasas.components.AppBottomBar
+import ipca.lojasas.presentation.components.AppBottomBar
 import ipca.lojasas.di.AppModule
 import ipca.lojasas.domain.model.Lote
 import ipca.lojasas.domain.model.Pedido

@@ -1,4 +1,4 @@
-package ipca.lojasas.screens.Students
+package ipca.lojasas.presentation.screens.Students
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*

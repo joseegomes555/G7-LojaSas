@@ -1,8 +1,7 @@
-package ipca.lojasas.screens
+package ipca.lojasas.presentation.screens
 
 import android.app.DatePickerDialog
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,7 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import ipca.lojasas.Routes
-import ipca.lojasas.components.AppBottomBar
+import ipca.lojasas.presentation.components.AppBottomBar
 import ipca.lojasas.di.AppModule
 import ipca.lojasas.domain.model.Lote
 import ipca.lojasas.domain.model.Produto
