@@ -1,11 +1,13 @@
-package ipca.lojasas.screens
+package ipca.lojasas.screens.Beneficiarios
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,10 +23,13 @@ import ipca.lojasas.Routes
 import ipca.lojasas.components.AppBottomBar
 import ipca.lojasas.ui.theme.IPCAGreen
 
-// Modelo simples interno
+// Modelo atualizado com mais dados
 data class Beneficiario(
+    var id: String = "", // ID do documento no Firestore
     val email: String = "",
     val nome: String = "Aluno IPCA",
+    val nif: String = "--",
+    val dataNascimento: String = "--",
     val tipo: String = ""
 )
 
@@ -39,7 +44,9 @@ fun BeneficiariosScreen(navController: NavController) {
             .whereEqualTo("tipo", "aluno")
             .get()
             .addOnSuccessListener { result ->
-                lista = result.map { it.toObject(Beneficiario::class.java) }
+                lista = result.map { doc ->
+                    doc.toObject(Beneficiario::class.java).apply { id = doc.id }
+                }
             }
     }
 
@@ -61,7 +68,16 @@ fun BeneficiariosScreen(navController: NavController) {
             }
 
             items(lista) { aluno ->
-                Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // Ação de Clique: Navega para o detalhe enviando o ID do aluno
+                        .clickable {
+                            navController.navigate("staff_beneficiario_detail/${aluno.id}")
+                        },
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(1.dp)
+                ) {
                     Row(
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -70,10 +86,11 @@ fun BeneficiariosScreen(navController: NavController) {
                             Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-                        Column {
-                            Text(aluno.email, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Estatuto: Ativo", color = IPCAGreen, fontSize = 12.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(aluno.nome, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text(aluno.email, color = Color.Gray, fontSize = 12.sp)
                         }
+                        Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Ver detalhe", tint = Color.Gray)
                     }
                 }
             }

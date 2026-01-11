@@ -1,4 +1,4 @@
-package ipca.lojasas.screens
+package ipca.lojasas.screens.Students
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -12,12 +12,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaffLoginScreen(
+fun StudentLoginScreen(
     onBack: () -> Unit,
     onLoginSuccess: () -> Unit
 ) {
@@ -27,12 +26,11 @@ fun StaffLoginScreen(
 
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login Colaborador", color = Color.White) },
+                title = { Text("Login Aluno", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
@@ -52,17 +50,32 @@ fun StaffLoginScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email IPCA") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Email de Aluno") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = IPCAGreen,
+                    focusedLabelColor = IPCAGreen,
+                    cursorColor = IPCAGreen
+                )
             )
+
             Spacer(Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = IPCAGreen,
+                    focusedLabelColor = IPCAGreen,
+                    cursorColor = IPCAGreen
+                )
             )
+
             Spacer(Modifier.height(32.dp))
 
             Button(
@@ -71,39 +84,27 @@ fun StaffLoginScreen(
                         isLoading = true
                         auth.signInWithEmailAndPassword(email, password)
                             .addOnCompleteListener { task ->
+                                isLoading = false
                                 if (task.isSuccessful) {
-                                    val uid = task.result.user?.uid
-                                    // Verificar na BD se é Staff
-                                    db.collection("utilizadores").document(uid ?: "")
-                                        .get()
-                                        .addOnSuccessListener { document ->
-                                            isLoading = false
-                                            val tipo = document.getString("tipo")
-
-                                            // Lógica de Segurança
-                                            if (tipo == "staff" || tipo == "admin") {
-                                                onLoginSuccess()
-                                            } else {
-                                                auth.signOut()
-                                                Toast.makeText(context, "Acesso negado: Apenas Staff.", Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-                                        .addOnFailureListener {
-                                            isLoading = false
-                                            Toast.makeText(context, "Erro ao verificar permissões.", Toast.LENGTH_SHORT).show()
-                                        }
+                                    Toast.makeText(context, "Login com sucesso!", Toast.LENGTH_SHORT).show()
+                                    onLoginSuccess()
                                 } else {
-                                    isLoading = false
-                                    Toast.makeText(context, "Erro Login: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Erro: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                                 }
                             }
+                    } else {
+                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 enabled = !isLoading,
                 colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen)
             ) {
-                if (isLoading) CircularProgressIndicator(color = Color.White) else Text("Entrar")
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text("Entrar")
+                }
             }
         }
     }

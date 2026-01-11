@@ -5,10 +5,21 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import ipca.lojasas.screens.*
+import ipca.lojasas.screens.Beneficiarios.BeneficiarioDetailScreen
+import ipca.lojasas.screens.Beneficiarios.BeneficiariosScreen
+import ipca.lojasas.screens.Staff.StaffDashboardScreen
+import ipca.lojasas.screens.Staff.StaffLoginScreen
+import ipca.lojasas.screens.Staff.StaffOrderDetailScreen
+import ipca.lojasas.screens.Students.StudentDashboardScreen
+import ipca.lojasas.screens.Students.StudentLoginScreen
+import ipca.lojasas.screens.Students.StudentOrderScreen
+import ipca.lojasas.screens.Students.StudentProfileScreen
 import ipca.lojasas.ui.theme.LojaSasTheme
 
 // Definição de todas as rotas da aplicação
@@ -20,6 +31,8 @@ object Routes {
 
     // Área do Estudante
     const val STUDENT_DASHBOARD = "student_dashboard"
+    const val STUDENT_ORDER = "student_order"
+    const val STUDENT_PROFILE = "student_profile"
 
     // Área do Staff
     const val STAFF_DASHBOARD = "staff_dashboard"
@@ -80,10 +93,19 @@ class MainActivity : ComponentActivity() {
 
                         // 2. ÁREA DO ALUNO
 
+                        // Dashboard Aluno
                         composable(Routes.STUDENT_DASHBOARD) {
-                            StudentDashboardScreen(
-                                navController = navController
-                            )
+                            StudentDashboardScreen(navController = navController)
+                        }
+
+                        // Ecrã de Pedidos
+                        composable(Routes.STUDENT_ORDER) {
+                            StudentOrderScreen(navController = navController)
+                        }
+
+                        // Ecrã de Perfil
+                        composable(Routes.STUDENT_PROFILE) {
+                            StudentProfileScreen(navController = navController)
                         }
 
 
@@ -110,6 +132,21 @@ class MainActivity : ComponentActivity() {
                         // Gestão de Beneficiários
                         composable(Routes.STAFF_BENEFICIARIOS) {
                             BeneficiariosScreen(navController = navController)
+                        }
+
+                        composable(
+                            route = "staff_beneficiario_detail/{userId}",
+                            arguments = listOf(navArgument("userId") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val userId = backStackEntry.arguments?.getString("userId") ?: ""
+                            BeneficiarioDetailScreen(navController = navController, userId = userId)
+                        }
+                        composable(
+                            route = "staff_order_detail/{pedidoId}",
+                            arguments = listOf(androidx.navigation.navArgument("pedidoId") { type = androidx.navigation.NavType.StringType })
+                        ) { backStackEntry ->
+                            val id = backStackEntry.arguments?.getString("pedidoId") ?: ""
+                            StaffOrderDetailScreen(navController = navController, pedidoId = id)
                         }
                     }
                 }
