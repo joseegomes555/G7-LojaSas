@@ -41,7 +41,7 @@ fun BeneficiariosScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         db.collection("utilizadores")
-            .whereEqualTo("tipo", "beneficiário")
+            .whereEqualTo("tipo", "aluno")
             .get()
             .addOnSuccessListener { result ->
                 lista = result.map { doc ->
