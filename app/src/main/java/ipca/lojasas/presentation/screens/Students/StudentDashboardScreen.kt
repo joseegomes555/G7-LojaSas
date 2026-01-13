@@ -42,7 +42,7 @@ fun StudentDashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Área do Estudante", color = IPCAGreen, fontWeight = FontWeight.Bold) },
+                title = { Text("Área do Beneficiário", color = IPCAGreen, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = {
                         viewModel.logout()
