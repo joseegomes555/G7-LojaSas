@@ -30,7 +30,7 @@ fun StudentLoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login Aluno", color = Color.White) },
+                title = { Text("Login Beneficiário", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
@@ -50,7 +50,7 @@ fun StudentLoginScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email de Aluno") },
+                label = { Text("Email") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(

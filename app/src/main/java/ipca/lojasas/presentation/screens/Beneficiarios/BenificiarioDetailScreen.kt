@@ -46,7 +46,7 @@ fun BeneficiarioDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ficha do Aluno", color = Color.White) },
+                title = { Text("Ficha do Beneficiário", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
@@ -128,7 +128,7 @@ fun BeneficiarioDetailScreen(
             }
         } else {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Aluno não encontrado.")
+                Text("Beneficiário não encontrado.")
             }
         }
     }

@@ -47,7 +47,7 @@ fun AuthChoiceScreen(
                 colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen),
                 shape = MaterialTheme.shapes.medium
             ) {
-                Text("Sou Aluno")
+                Text("Beneficiário")
             }
 
             Spacer(Modifier.height(16.dp))
@@ -60,7 +60,7 @@ fun AuthChoiceScreen(
                 border = BorderStroke(1.dp, IPCAGreen),
                 shape = MaterialTheme.shapes.medium
             ) {
-                Text("Sou Colaborador (SAS)")
+                Text("Colaborador (SAS)")
             }
         }
     }

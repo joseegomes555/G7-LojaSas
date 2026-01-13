@@ -27,7 +27,7 @@ import ipca.lojasas.ui.theme.IPCAGreen
 data class Beneficiario(
     var id: String = "", // ID do documento no Firestore
     val email: String = "",
-    val nome: String = "Aluno IPCA",
+    val nome: String = "Benefeciário IPCA",
     val nif: String = "--",
     val dataNascimento: String = "--",
     val tipo: String = ""
@@ -41,7 +41,7 @@ fun BeneficiariosScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         db.collection("utilizadores")
-            .whereEqualTo("tipo", "aluno")
+            .whereEqualTo("tipo", "beneficiário")
             .get()
             .addOnSuccessListener { result ->
                 lista = result.map { doc ->
@@ -64,7 +64,7 @@ fun BeneficiariosScreen(navController: NavController) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                Text("Total: ${lista.size} alunos ativos", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+                Text("Total: ${lista.size} beneficiários ativos", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
             }
 
             items(lista) { aluno ->
