@@ -48,7 +48,7 @@ fun StudentProfileScreen(
             FirebaseFirestore.getInstance().collection("utilizadores").document(user.uid).get()
                 .addOnSuccessListener { doc ->
                     if (doc.exists()) {
-                        nomeAluno = doc.getString("nome") ?: "Beneficiário"
+                        nomeAluno = doc.getString("nome") ?: "Estudante"
                         nifAluno = doc.getString("nif") ?: "--"
                     }
                 }
