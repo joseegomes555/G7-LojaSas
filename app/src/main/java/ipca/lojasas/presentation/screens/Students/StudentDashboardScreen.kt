@@ -1,10 +1,8 @@
 package ipca.lojasas.presentation.screens.Students
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -30,14 +28,16 @@ import java.util.Locale
 @Composable
 fun StudentDashboardScreen(
     navController: NavController,
-    // CLEAN ARCH: Usamos a Factory para criar o ViewModel
     viewModel: StudentViewModel = viewModel(factory = AppModule.viewModelFactory)
 ) {
-    // CLEAN ARCH: Observamos o StateFlow
+    // Observa a lista de pedidos do ViewModel
     val pedidos by viewModel.meusPedidos.collectAsState()
 
-    val pedidoAtivo = pedidos.firstOrNull { it.estado != "Entregue" && it.estado != "Cancelado" }
-    val historico = pedidos.filter { it.estado == "Entregue" || it.estado == "Cancelado" }
+    // Lógica para encontrar o Pedido Ativo:
+    // Qualquer pedido que NÃO esteja "Entregue" nem "Cancelado" (ou seja: Pendente, Reagendamento, Cancelamento Solicitado, Pronto)
+    val pedidoAtivo = pedidos.firstOrNull {
+        it.estado != "Entregue" && it.estado != "Cancelado"
+    }
 
     Scaffold(
         topBar = {
@@ -51,13 +51,20 @@ fun StudentDashboardScreen(
                 }
             )
         },
-        bottomBar = { StudentBottomBar(navController, Routes.STUDENT_DASHBOARD) }
+        bottomBar = { StudentBottomBar(navController) }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()
+            .padding(16.dp)
+        ) {
+
+            // --- CARTÃO DE BOAS VINDAS ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = IPCAGreen),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                elevation = CardDefaults.cardElevation(4.dp)
             ) {
                 Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.Face, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
@@ -68,55 +75,100 @@ fun StudentDashboardScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Estado do Pedido", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // --- SECÇÃO: PEDIDO ATUAL ---
+            Text("O Teu Pedido Atual", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (pedidoAtivo != null) {
+                // Formatar a data de recolha (apenas Dia/Mês/Ano)
+                val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                val dataEntrega = pedidoAtivo.dataLevantamento?.toDate()?.let { sdf.format(it) } ?: "A aguardar agendamento"
+
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            // Navega para os detalhes ao clicar no cartão
+                            navController.navigate("student_order_detail/${pedidoAtivo.id}")
+                        },
                     colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(4.dp),
-                    border = BorderStroke(1.dp, IPCAGreen)
+                    elevation = CardDefaults.cardElevation(6.dp),
+                    border = BorderStroke(1.dp, IPCAGreen.copy(alpha = 0.5f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                            Text("Pedido #${pedidoAtivo.id.take(4)}", color = Color.Gray, fontSize = 12.sp)
-                            val sdf = SimpleDateFormat("dd/MM HH:mm", Locale.getDefault())
-                            val dataStr = pedidoAtivo.dataPedido?.toDate()?.let { sdf.format(it) } ?: "--"
-                            Text(dataStr, color = Color.Gray, fontSize = 12.sp)
+                    Column(modifier = Modifier.padding(20.dp)) {
+
+                        // Linha Superior: ID e Data
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("Pedido #${pedidoAtivo.id.take(4).uppercase()}", color = Color.Gray, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+
+                            // Data de Recolha em destaque
+                            Surface(
+                                color = IPCAGreen.copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.DateRange, null, tint = IPCAGreen, modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(dataEntrega, fontWeight = FontWeight.Bold, color = IPCAGreen, fontSize = 14.sp)
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Linha Central: Estado Grande
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Refresh, null, tint = IPCAGreen, modifier = Modifier.size(32.dp))
-                            Spacer(modifier = Modifier.width(12.dp))
+                            Icon(
+                                imageVector = if(pedidoAtivo.estado == "Pendente") Icons.Default.Refresh else Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = if(pedidoAtivo.estado == "Reagendamento") Color(0xFFE65100) else IPCAGreen,
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Spacer(modifier = Modifier.width(16.dp))
                             Column {
-                                Text(pedidoAtivo.estado.uppercase(), color = IPCAGreen, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                                Text("Aguarde atualização.", fontSize = 13.sp, color = Color.Gray)
+                                Text(
+                                    text = pedidoAtivo.estado.uppercase(),
+                                    color = if(pedidoAtivo.estado == "Reagendamento") Color(0xFFE65100) else IPCAGreen,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 20.sp
+                                )
+                                Text(
+                                    text = "Clica para ver detalhes ou gerir",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray
+                                )
                             }
                         }
                     }
                 }
             } else {
-                Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)), modifier = Modifier.fillMaxWidth()) {
-                    Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text("Não tens pedidos ativos.", color = Color.Gray)
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-            Text("Histórico", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(historico) { pedido ->
-                    val sdf = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                    val data = pedido.dataPedido?.toDate()?.let { sdf.format(it) } ?: "-"
-                    Row(
-                        modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(8.dp)).padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                // --- SE NÃO HOUVER PEDIDOS ATIVOS ---
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
+                    modifier = Modifier.fillMaxWidth(),
+                    border = BorderStroke(1.dp, Color.LightGray)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(32.dp).fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("Concluído", fontWeight = FontWeight.Bold)
-                        Text(data, fontSize = 12.sp, color = Color.Gray)
+                        Icon(Icons.Default.ShoppingCart, null, tint = Color.Gray, modifier = Modifier.size(48.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Sem pedidos ativos no momento.", color = Color.Gray)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate(Routes.STUDENT_ORDER) },
+                            colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen)
+                        ) {
+                            Text("Fazer Novo Pedido")
+                        }
                     }
                 }
             }

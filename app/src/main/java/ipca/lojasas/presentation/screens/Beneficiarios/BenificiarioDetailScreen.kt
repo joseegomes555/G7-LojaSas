@@ -1,147 +1,154 @@
 package ipca.lojasas.presentation.screens.Beneficiarios
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import ipca.lojasas.domain.model.Pedido
 import ipca.lojasas.ui.theme.IPCAGreen
+import ipca.lojasas.ui.theme.IPCARed
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BeneficiarioDetailScreen(
-    navController: NavController,
-    userId: String // Recebe o ID do utilizador
-) {
-    var aluno by remember { mutableStateOf<Beneficiario?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    val db = FirebaseFirestore.getInstance()
+fun BeneficiarioDetailScreen(navController: NavController, userId: String) {
+    var user by remember { mutableStateOf<Map<String, Any>?>(null) }
+    var pedidos by remember { mutableStateOf<List<Pedido>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
 
-    // Carregar dados deste aluno específico
+    val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
+
     LaunchedEffect(userId) {
-        db.collection("utilizadores").document(userId).get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    aluno = document.toObject(Beneficiario::class.java)
+        // Carrega utilizador pelo ID do documento
+        db.collection("utilizadores").document(userId).addSnapshotListener { doc, _ ->
+            if (doc != null && doc.exists()) {
+                user = doc.data
+                val uid = doc.getString("uid") // Tenta apanhar o UID do Auth se existir
+
+                // Carrega pedidos (Tenta pelo UID, se falhar tenta pelo Email)
+                if (uid != null) {
+                    db.collection("pedidos").whereEqualTo("uid", uid)
+                        .orderBy("dataPedido", Query.Direction.DESCENDING).limit(20)
+                        .get().addOnSuccessListener { q ->
+                            pedidos = q.toObjects(Pedido::class.java)
+                            loading = false
+                        }
+                } else {
+                    // Fallback para email
+                    val email = doc.getString("email")
+                    if(email != null) {
+                        db.collection("pedidos").whereEqualTo("email", email)
+                            .orderBy("dataPedido", Query.Direction.DESCENDING).limit(20)
+                            .get().addOnSuccessListener { q ->
+                                pedidos = q.toObjects(Pedido::class.java)
+                                loading = false
+                            }
+                    } else loading = false
                 }
-                isLoading = false
+            } else {
+                loading = false
             }
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Ficha do Beneficiário", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                    }
-                },
+                title = { Text("Detalhes Beneficiário", color = Color.White) },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = IPCAGreen)
             )
         }
     ) { padding ->
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = IPCAGreen)
-            }
-        } else if (aluno != null) {
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Foto / Avatar Grande
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .background(IPCAGreen.copy(alpha = 0.1f), CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        Icons.Default.Person,
-                        contentDescription = null,
-                        modifier = Modifier.size(50.dp),
-                        tint = IPCAGreen
-                    )
-                }
+        if (loading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = IPCAGreen) }
+        } else if (user == null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Erro ao carregar.") }
+        } else {
+            Column(modifier = Modifier.padding(padding).padding(16.dp)) {
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                    Box(modifier = Modifier.size(60.dp).background(Color.LightGray, CircleShape), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(user!!["nome"] as? String ?: "Sem Nome", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(user!!["tipo_vinculo"] as? String ?: "Aluno", color = Color.Gray)
+                    }
 
-                Text(aluno!!.nome, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                Text(aluno!!.email, color = Color.Gray)
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Cartão de Dados Pessoais
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(2.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Dados Pessoais", color = IPCAGreen, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 12.dp))
-
-                        DetailRow(icon = Icons.Default.Info, label = "NIF", value = aluno!!.nif)
-                        Divider(color = Color.LightGray.copy(alpha = 0.2f), modifier = Modifier.padding(vertical = 12.dp))
-                        DetailRow(icon = Icons.Default.DateRange, label = "Data Nascimento", value = aluno!!.dataNascimento)
+                    val isAtivo = user!!["ativo"] as? Boolean ?: true
+                    Column(horizontalAlignment = Alignment.End) {
+                        Switch(
+                            checked = isAtivo,
+                            onCheckedChange = { novo ->
+                                db.collection("utilizadores").document(userId).update("ativo", novo)
+                                Toast.makeText(context, if(novo) "Conta Ativada" else "Conta Suspensa", Toast.LENGTH_SHORT).show()
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = IPCAGreen, checkedTrackColor = IPCAGreen.copy(alpha = 0.5f))
+                        )
+                        Text(if(isAtivo) "Ativo" else "Suspenso", fontSize = 10.sp, color = if(isAtivo) IPCAGreen else IPCARed, fontWeight = FontWeight.Bold)
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                // Cartão de Estado (Extra)
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(2.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("Estado da Conta:", fontWeight = FontWeight.SemiBold)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(color = IPCAGreen.copy(alpha = 0.1f), shape = RoundedCornerShape(4.dp)) {
-                                Text("ATIVO", color = IPCAGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
+                    Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+                        val email = user!!["email"] as? String ?: "-"
+                        val telemovel = user!!["telemovel"] as? String ?: "-"
+                        InfoRow(Icons.Default.Email, email) { context.startActivity(Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:$email") }) }
+                        if (telemovel.isNotEmpty()) InfoRow(Icons.Default.Phone, telemovel)
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
+                Text("Histórico Recente", fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
+
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(pedidos) { p ->
+                        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        val d = p.dataPedido?.toDate()?.let { sdf.format(it) } ?: "-"
+                        Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(1.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(d, fontWeight = FontWeight.Bold)
+                                Text(p.estado, color = if(p.estado=="Entregue") IPCAGreen else Color.Gray)
                             }
                         }
                     }
                 }
-            }
-        } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Beneficiário não encontrado.")
             }
         }
     }
 }
 
 @Composable
-fun DetailRow(icon: ImageVector, label: String, value: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(20.dp))
-        Spacer(modifier = Modifier.width(12.dp))
-        Column {
-            Text(label, fontSize = 12.sp, color = Color.Gray)
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-        }
+fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: (() -> Unit)? = null) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(12.dp))
+        Text(text, fontSize = 14.sp)
     }
 }

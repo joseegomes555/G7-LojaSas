@@ -1,5 +1,6 @@
 package ipca.lojasas.domain.repository
 
+import com.google.firebase.Timestamp
 import ipca.lojasas.domain.model.*
 import kotlinx.coroutines.flow.Flow
 
@@ -17,4 +18,7 @@ interface LojaRepository {
     suspend fun adicionarLote(lote: Lote): Result<Boolean>
     suspend fun removerStockManual(loteId: String, qtdAtual: Int, qtdRemover: Int): Result<Boolean>
     suspend fun getPerfilUsuario(uid: String): ipca.lojasas.domain.model.Beneficiario?
+    suspend fun solicitarCancelamento(pedidoId: String, motivo: String): Result<Boolean>
+    suspend fun proporReagendamento(pedidoId: String, novaData: Timestamp, autor: String): Result<Boolean>
+    suspend fun aceitarReagendamento(pedidoId: String, novaData: Timestamp): Result<Boolean>
 }
