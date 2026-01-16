@@ -49,30 +49,30 @@ fun AuthChoiceScreen(navController: NavController) {
 
             // BOTÃO LOGIN BENEFICIÁRIO
             Button(
-                onClick = { navController.navigate(Routes.STUDENT_LOGIN) },
+                onClick = { navController.navigate(Routes.BENEFICIARIO_LOGIN) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Login Beneficiário", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("Beneficiário", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // BOTÃO LOGIN STAFF
+            // BOTÃO LOGIN COLABORADOR
             OutlinedButton(
-                onClick = { navController.navigate(Routes.STAFF_LOGIN) },
+                onClick = { navController.navigate(Routes.COLABORADOR_LOGIN) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = IPCAGreen),
                 border = BorderStroke(2.dp, IPCAGreen),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Login Staff", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                Text("Colaborador", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // BOTÃO CANDIDATURA (Separado)
+            // BOTÃO CANDIDATURA
             Text("Ainda não tens acesso?", color = Color.Gray, fontSize = 14.sp)
             Spacer(modifier = Modifier.height(8.dp))
 

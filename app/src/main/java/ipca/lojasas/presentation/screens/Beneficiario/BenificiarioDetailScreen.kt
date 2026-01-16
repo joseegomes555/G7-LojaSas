@@ -1,8 +1,11 @@
-package ipca.lojasas.presentation.screens.Beneficiarios
+package ipca.lojasas.presentation.screens.Beneficiario
 
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Base64
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,7 +18,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -40,35 +46,28 @@ fun BeneficiarioDetailScreen(navController: NavController, userId: String) {
     val context = LocalContext.current
 
     LaunchedEffect(userId) {
-        // Carrega utilizador pelo ID do documento
         db.collection("utilizadores").document(userId).addSnapshotListener { doc, _ ->
             if (doc != null && doc.exists()) {
                 user = doc.data
-                val uid = doc.getString("uid") // Tenta apanhar o UID do Auth se existir
+                val uid = doc.getString("uid")
+                val email = doc.getString("email")
 
-                // Carrega pedidos (Tenta pelo UID, se falhar tenta pelo Email)
-                if (uid != null) {
-                    db.collection("pedidos").whereEqualTo("uid", uid)
-                        .orderBy("dataPedido", Query.Direction.DESCENDING).limit(20)
-                        .get().addOnSuccessListener { q ->
-                            pedidos = q.toObjects(Pedido::class.java)
+                if (email != null) {
+                    db.collection("pedidos").whereEqualTo("email", email)
+                        .orderBy("dataPedido", Query.Direction.DESCENDING)
+                        .addSnapshotListener { snaps, _ ->
+                            if (snaps != null) pedidos = snaps.toObjects(Pedido::class.java)
                             loading = false
                         }
-                } else {
-                    // Fallback para email
-                    val email = doc.getString("email")
-                    if(email != null) {
-                        db.collection("pedidos").whereEqualTo("email", email)
-                            .orderBy("dataPedido", Query.Direction.DESCENDING).limit(20)
-                            .get().addOnSuccessListener { q ->
-                                pedidos = q.toObjects(Pedido::class.java)
-                                loading = false
-                            }
-                    } else loading = false
-                }
-            } else {
-                loading = false
-            }
+                } else if (uid != null) {
+                    db.collection("pedidos").whereEqualTo("uid", uid)
+                        .orderBy("dataPedido", Query.Direction.DESCENDING)
+                        .addSnapshotListener { snaps, _ ->
+                            if (snaps != null) pedidos = snaps.toObjects(Pedido::class.java)
+                            loading = false
+                        }
+                } else { loading = false }
+            } else { loading = false }
         }
     }
 
@@ -88,10 +87,34 @@ fun BeneficiarioDetailScreen(navController: NavController, userId: String) {
         } else {
             Column(modifier = Modifier.padding(padding).padding(16.dp)) {
 
+                // CABEÇALHO
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
-                    Box(modifier = Modifier.size(60.dp).background(Color.LightGray, CircleShape), contentAlignment = Alignment.Center) {
-                        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(40.dp))
+
+                    val fotoBase64 = user!!["fotoPerfil"] as? String
+
+                    // Processa a imagem fora da UI tree
+                    val imageBitmap = remember(fotoBase64) {
+                        try {
+                            if (fotoBase64 != null) {
+                                val decodedBytes = Base64.decode(fotoBase64, Base64.DEFAULT)
+                                BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)?.asImageBitmap()
+                            } else null
+                        } catch (e: Exception) { null }
                     }
+
+                    if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = "Foto",
+                            modifier = Modifier.size(60.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(modifier = Modifier.size(60.dp).background(Color.LightGray, CircleShape), contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(40.dp))
+                        }
+                    }
+
                     Spacer(modifier = Modifier.width(16.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(user!!["nome"] as? String ?: "Sem Nome", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -104,22 +127,36 @@ fun BeneficiarioDetailScreen(navController: NavController, userId: String) {
                             checked = isAtivo,
                             onCheckedChange = { novo ->
                                 db.collection("utilizadores").document(userId).update("ativo", novo)
-                                Toast.makeText(context, if(novo) "Conta Ativada" else "Conta Suspensa", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, if(novo) "Ativado" else "Suspenso", Toast.LENGTH_SHORT).show()
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = IPCAGreen, checkedTrackColor = IPCAGreen.copy(alpha = 0.5f))
                         )
-                        Text(if(isAtivo) "Ativo" else "Suspenso", fontSize = 10.sp, color = if(isAtivo) IPCAGreen else IPCARed, fontWeight = FontWeight.Bold)
                     }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Dados de Contacto
                 Card(colors = CardDefaults.cardColors(containerColor = Color.White), elevation = CardDefaults.cardElevation(2.dp)) {
                     Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
                         val email = user!!["email"] as? String ?: "-"
                         val telemovel = user!!["telemovel"] as? String ?: "-"
-                        InfoRow(Icons.Default.Email, email) { context.startActivity(Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:$email") }) }
-                        if (telemovel.isNotEmpty()) InfoRow(Icons.Default.Phone, telemovel)
+
+                        Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable {
+                            context.startActivity(Intent(Intent.ACTION_SENDTO).apply { data = Uri.parse("mailto:$email") })
+                        }, verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Email, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(12.dp))
+                            Text(email, fontSize = 14.sp)
+                        }
+
+                        if (telemovel.isNotEmpty() && telemovel != "-") {
+                            Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Phone, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(12.dp))
+                                Text(telemovel, fontSize = 14.sp)
+                            }
+                        }
                     }
                 }
 
@@ -141,14 +178,5 @@ fun BeneficiarioDetailScreen(navController: NavController, userId: String) {
                 }
             }
         }
-    }
-}
-
-@Composable
-fun InfoRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: (() -> Unit)? = null) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).then(if (onClick != null) Modifier.clickable { onClick() } else Modifier), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = Color.Gray, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(12.dp))
-        Text(text, fontSize = 14.sp)
     }
 }

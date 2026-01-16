@@ -9,39 +9,46 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.google.firebase.FirebaseApp
-
-// IMPORTS
-import ipca.lojasas.presentation.screens.Beneficiarios.BeneficiarioDetailScreen
-import ipca.lojasas.presentation.screens.Beneficiarios.BeneficiariosScreen
-import ipca.lojasas.presentation.screens.CandidaturaScreen
-import ipca.lojasas.presentation.screens.Staff.StaffDashboardScreen
-import ipca.lojasas.presentation.screens.Staff.StaffLoginScreen
-import ipca.lojasas.presentation.screens.Staff.StaffOrderDetailScreen
-import ipca.lojasas.presentation.screens.Staff.StaffCandidaturaScreen
-import ipca.lojasas.presentation.screens.StockScreen
-import ipca.lojasas.presentation.screens.AuthChoiceScreen
-import ipca.lojasas.presentation.screens.Students.StudentDashboardScreen
-import ipca.lojasas.presentation.screens.Students.StudentLoginScreen
-import ipca.lojasas.presentation.screens.Students.StudentOrderDetailScreen
-import ipca.lojasas.presentation.screens.Students.StudentOrderScreen
-import ipca.lojasas.presentation.screens.Students.StudentProfileScreen
 import ipca.lojasas.ui.theme.LojaSasTheme
+
+// IMPORTS DOS ECRÃS
+import ipca.lojasas.presentation.screens.AuthChoiceScreen
+import ipca.lojasas.presentation.screens.CandidaturaScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioLoginScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioRegisterScreen
+import ipca.lojasas.presentation.screens.Colaborador.ColaboradorLoginScreen
+
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioDashboardScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioOrderScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioOrderDetailScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioProfileScreen
+
+import ipca.lojasas.presentation.screens.Colaborador.ColaboradorDashboardScreen
+import ipca.lojasas.presentation.screens.Colaborador.ColaboradorOrderDetailScreen
+import ipca.lojasas.presentation.screens.Colaborador.StockScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiariosScreen
+import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioDetailScreen
+import ipca.lojasas.presentation.screens.Colaborador.ColaboradorCandidaturasScreen
 
 object Routes {
     const val CHOICE = "choice"
-    const val STUDENT_LOGIN = "student_login"
-    const val STAFF_LOGIN = "staff_login"
+    const val CANDIDACY = "candidacy" // A rota que estava a faltar
 
-    // Rotas Aluno
-    const val STUDENT_DASHBOARD = "student_dashboard"
-    const val STUDENT_ORDER = "student_order"
-    const val STUDENT_PROFILE = "student_profile"
+    // Auth
+    const val BENEFICIARIO_LOGIN = "beneficiario_login"
+    const val BENEFICIARIO_REGISTER = "beneficiario_register"
+    const val COLABORADOR_LOGIN = "colaborador_login"
 
-    // Rotas Staff
-    const val STAFF_DASHBOARD = "staff_dashboard"
-    const val STAFF_STOCK = "staff_stock"            // <--- CORRIGIDO
-    const val STAFF_BENEFICIARIOS = "staff_beneficiarios" // <--- CORRIGIDO
-    const val STAFF_CANDIDATURA = "staff_candidatura"
+    // Beneficiário
+    const val BENEFICIARIO_DASHBOARD = "beneficiario_dashboard"
+    const val BENEFICIARIO_ORDER = "beneficiario_order"
+    const val BENEFICIARIO_PROFILE = "beneficiario_profile"
+
+    // Colaborador
+    const val COLABORADOR_DASHBOARD = "colaborador_dashboard"
+    const val COLABORADOR_STOCK = "colaborador_stock"
+    const val COLABORADOR_BENEFICIARIOS = "colaborador_beneficiarios"
+    const val COLABORADOR_CANDIDATURA = "colaborador_candidatura"
 }
 
 class MainActivity : ComponentActivity() {
@@ -55,49 +62,58 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(navController = navController, startDestination = Routes.CHOICE) {
 
-                    // --- GERAL ---
+                    // ECRÃS DE ENTRADA
                     composable(Routes.CHOICE) { AuthChoiceScreen(navController) }
-                    composable("candidacy") { CandidaturaScreen(navController) }
 
-                    composable(Routes.STUDENT_LOGIN) { StudentLoginScreen(navController) }
-                    composable(Routes.STAFF_LOGIN) { StaffLoginScreen(navController) }
+                    composable(Routes.CANDIDACY) { CandidaturaScreen(navController) }
 
-                    // --- ALUNO ---
-                    composable(Routes.STUDENT_DASHBOARD) { StudentDashboardScreen(navController) }
-                    composable(Routes.STUDENT_ORDER) { StudentOrderScreen(navController) }
-                    composable(Routes.STUDENT_PROFILE) { StudentProfileScreen(navController) }
+                    composable(Routes.BENEFICIARIO_LOGIN) { BeneficiarioLoginScreen(navController) }
+
+                    composable(Routes.BENEFICIARIO_REGISTER) { BeneficiarioRegisterScreen(navController) }
+
+                    composable(Routes.COLABORADOR_LOGIN) { ColaboradorLoginScreen(navController) }
+
+                    // ECRÃS DO BENEFICIÁRIO
+                    composable(Routes.BENEFICIARIO_DASHBOARD) { BeneficiarioDashboardScreen(navController) }
+                    composable(Routes.BENEFICIARIO_ORDER) { BeneficiarioOrderScreen(navController) }
+                    composable(Routes.BENEFICIARIO_PROFILE) { BeneficiarioProfileScreen(navController) }
 
                     composable(
-                        route = "student_order_detail/{pedidoId}",
+                        route = "beneficiario_order_detail/{pedidoId}",
                         arguments = listOf(navArgument("pedidoId") { type = NavType.StringType })
-                    ) { back -> StudentOrderDetailScreen(navController, back.arguments?.getString("pedidoId") ?: "") }
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getString("pedidoId") ?: ""
+                        BeneficiarioOrderDetailScreen(navController, id)
+                    }
+
+                    // ECRÃS DO COLABORADOR
+                    composable(Routes.COLABORADOR_DASHBOARD) {
+                        ColaboradorDashboardScreen(
+                            navController = navController,
+                            onLogout = { navController.navigate(Routes.CHOICE) { popUpTo(0) } }
+                        )
+                    }
+
+                    composable(Routes.COLABORADOR_STOCK) { StockScreen(navController) }
+                    composable(Routes.COLABORADOR_BENEFICIARIOS) { BeneficiariosScreen(navController) }
+
+                    composable(Routes.COLABORADOR_CANDIDATURA) { ColaboradorCandidaturasScreen(navController) }
+
+                    composable(
+                        route = "colaborador_order_detail/{pedidoId}",
+                        arguments = listOf(navArgument("pedidoId") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getString("pedidoId") ?: ""
+                        ColaboradorOrderDetailScreen(navController, id)
+                    }
 
                     composable(
                         route = "beneficiario_detail/{userId}",
                         arguments = listOf(navArgument("userId") { type = NavType.StringType })
-                    ) { back -> BeneficiarioDetailScreen(navController, back.arguments?.getString("userId") ?: "") }
-
-                    composable("student_register") { ipca.lojasas.presentation.screens.Students.StudentRegisterScreen(navController) }
-
-                    // --- STAFF ---
-
-                    composable(Routes.STAFF_DASHBOARD) {
-                        StaffDashboardScreen(
-                            navController = navController,
-                            onLogout = {
-                                navController.navigate(Routes.CHOICE) { popUpTo(0) }
-                            }
-                        )
+                    ) { backStackEntry ->
+                        val id = backStackEntry.arguments?.getString("userId") ?: ""
+                        BeneficiarioDetailScreen(navController, id)
                     }
-
-                    composable(Routes.STAFF_STOCK) { StockScreen(navController) }
-                    composable(Routes.STAFF_BENEFICIARIOS) { BeneficiariosScreen(navController) }
-                    composable(Routes.STAFF_CANDIDATURA) { StaffCandidaturaScreen(navController) }
-
-                    composable(
-                        route = "staff_order_detail/{pedidoId}",
-                        arguments = listOf(navArgument("pedidoId") { type = NavType.StringType })
-                    ) { back -> StaffOrderDetailScreen(navController, back.arguments?.getString("pedidoId") ?: "") }
                 }
             }
         }

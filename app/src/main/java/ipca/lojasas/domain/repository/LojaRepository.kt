@@ -1,24 +1,30 @@
 package ipca.lojasas.domain.repository
 
-import com.google.firebase.Timestamp
-import ipca.lojasas.domain.model.*
+import android.graphics.Bitmap
+import ipca.lojasas.domain.model.Lote
+import ipca.lojasas.domain.model.Pedido
+import ipca.lojasas.domain.model.Produto
 import kotlinx.coroutines.flow.Flow
+import com.google.firebase.Timestamp
 
 interface LojaRepository {
-    fun getProdutos(): Flow<List<Produto>>
-    fun getLotes(): Flow<List<Lote>>
-    fun getPedidosPorAluno(uid: String): Flow<List<Pedido>>
-    fun getPedidosPendentes(): Flow<List<Pedido>>
+    // GERAL
+    fun getProdutosCatalogo(): Flow<List<Produto>>
+    fun getLotesStock(): Flow<List<Lote>>
+    fun getPerfilUsuario(uid: String): Flow<Map<String, Any>?>
+    suspend fun logout()
 
-    // Ações
-    suspend fun criarPedido(pedido: Pedido): Result<Boolean>
-    suspend fun abaterStock(itens: List<ItemPedido>): Result<Boolean>
-    suspend fun cancelarPedido(pedido: Pedido): Result<Boolean>
-    suspend fun processarEntrega(pedidoId: String): Result<Boolean>
-    suspend fun adicionarLote(lote: Lote): Result<Boolean>
-    suspend fun removerStockManual(loteId: String, qtdAtual: Int, qtdRemover: Int): Result<Boolean>
-    suspend fun getPerfilUsuario(uid: String): ipca.lojasas.domain.model.Beneficiario?
-    suspend fun solicitarCancelamento(pedidoId: String, motivo: String): Result<Boolean>
-    suspend fun proporReagendamento(pedidoId: String, novaData: Timestamp, autor: String): Result<Boolean>
-    suspend fun aceitarReagendamento(pedidoId: String, novaData: Timestamp): Result<Boolean>
+    // BENEFICIARIO
+    fun getMeusPedidos(uid: String): Flow<List<Pedido>>
+    suspend fun fazerPedido(pedido: Pedido): Boolean
+    suspend fun cancelarPedido(pedidoId: String, motivo: String)
+    suspend fun aceitarReagendamento(pedidoId: String, novaData: Timestamp)
+    fun uploadFotoPerfil(bitmap: Bitmap, uid: String, onComplete: (Boolean) -> Unit)
+
+    // COLABORADOR
+    fun getTodosPedidos(): Flow<List<Pedido>>
+    suspend fun adicionarLote(lote: Lote)
+    suspend fun eliminarLote(loteId: String, motivo: String, loteInfo: Lote)
+    suspend fun atualizarEstadoPedido(pedidoId: String, novoEstado: String)
+    suspend fun reagendarPedido(pedidoId: String, novaData: Long)
 }

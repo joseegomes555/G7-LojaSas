@@ -1,4 +1,4 @@
-package ipca.lojasas.presentation.screens.Staff
+package ipca.lojasas.presentation.screens.Colaborador
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -19,13 +19,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
-import ipca.lojasas.presentation.components.BottomBar
+import ipca.lojasas.presentation.components.ColaboradorBottomBar
 import ipca.lojasas.ui.theme.IPCAGreen
 import ipca.lojasas.ui.theme.IPCARed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaffCandidaturaScreen(navController: NavController) {
+fun ColaboradorCandidaturasScreen(navController: NavController) {
     var candidaturas by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
     val db = FirebaseFirestore.getInstance()
     val context = LocalContext.current
@@ -49,11 +49,11 @@ fun StaffCandidaturaScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Novas Candidaturas", color = Color.White) },
+                title = { Text("Candidaturas", color = Color.White) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = IPCAGreen)
             )
         },
-        bottomBar = { BottomBar(navController) }
+        bottomBar = { ColaboradorBottomBar(navController) }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
             if (candidaturas.isEmpty()) {
@@ -80,9 +80,6 @@ fun StaffCandidaturaScreen(navController: NavController) {
                                 }
                                 Text(email, color = Color.Gray, fontSize = 14.sp)
 
-                                Spacer(modifier = Modifier.height(8.dp))
-
-                                // Detalhes extra (se existirem)
                                 val numMec = cand["numEstudante"] as? String
                                 if (numMec != null) Text("Nº: $numMec", fontSize = 12.sp)
 
@@ -91,25 +88,21 @@ fun StaffCandidaturaScreen(navController: NavController) {
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
-                                // Botões de Ação
                                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Button(
                                         onClick = {
-                                            // Lógica de Rejeitar
                                             db.collection("candidaturas").document(id).update("estado", "Rejeitado")
-                                            Toast.makeText(context, "Candidatura Rejeitada", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(context, "Rejeitada", Toast.LENGTH_SHORT).show()
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = IPCARed),
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Icon(Icons.Default.Close, null)
-                                        Spacer(Modifier.width(4.dp))
                                         Text("Rejeitar")
                                     }
 
                                     Button(
                                         onClick = {
-                                            // Lógica de Aprovar: Cria user na coleção final
                                             val novoBeneficiario = hashMapOf(
                                                 "nome" to nome,
                                                 "email" to email,
@@ -122,19 +115,16 @@ fun StaffCandidaturaScreen(navController: NavController) {
                                                 "dataCriacao" to Timestamp.now()
                                             )
 
-                                            // 1. Cria utilizador
                                             db.collection("utilizadores").add(novoBeneficiario)
                                                 .addOnSuccessListener {
-                                                    // 2. Marca candidatura como Aprovada
                                                     db.collection("candidaturas").document(id).update("estado", "Aprovado")
-                                                    Toast.makeText(context, "Aprovado! Adicionado aos Beneficiários.", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "Aprovado!", Toast.LENGTH_SHORT).show()
                                                 }
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen),
                                         modifier = Modifier.weight(1f)
                                     ) {
                                         Icon(Icons.Default.Check, null)
-                                        Spacer(Modifier.width(4.dp))
                                         Text("Aprovar")
                                     }
                                 }

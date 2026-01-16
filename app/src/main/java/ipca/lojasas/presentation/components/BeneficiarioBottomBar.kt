@@ -14,26 +14,26 @@ import ipca.lojasas.Routes
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @Composable
-fun StudentBottomBar(navController: NavController) {
+fun BeneficiarioBottomBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
     NavigationBar(containerColor = Color.White) {
 
-        // 1. INÍCIO (Dashboard)
+        // 1. INÍCIO
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
             label = { Text("Início") },
-            selected = currentRoute == Routes.STUDENT_DASHBOARD,
+            selected = currentRoute == Routes.BENEFICIARIO_DASHBOARD,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = IPCAGreen,
                 selectedTextColor = IPCAGreen,
                 indicatorColor = IPCAGreen.copy(alpha = 0.1f)
             ),
             onClick = {
-                if (currentRoute != Routes.STUDENT_DASHBOARD) {
-                    navController.navigate(Routes.STUDENT_DASHBOARD) {
-                        popUpTo(Routes.STUDENT_DASHBOARD) { inclusive = true }
+                if (currentRoute != Routes.BENEFICIARIO_DASHBOARD) {
+                    navController.navigate(Routes.BENEFICIARIO_DASHBOARD) {
+                        popUpTo(Routes.BENEFICIARIO_DASHBOARD) { inclusive = true }
                     }
                 }
             }
@@ -43,16 +43,16 @@ fun StudentBottomBar(navController: NavController) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Pedir") },
             label = { Text("Pedir") },
-            selected = currentRoute == Routes.STUDENT_ORDER,
+            selected = currentRoute == Routes.BENEFICIARIO_ORDER,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = IPCAGreen,
                 selectedTextColor = IPCAGreen,
                 indicatorColor = IPCAGreen.copy(alpha = 0.1f)
             ),
             onClick = {
-                if (currentRoute != Routes.STUDENT_ORDER) {
-                    navController.navigate(Routes.STUDENT_ORDER) {
-                        popUpTo(Routes.STUDENT_DASHBOARD) { saveState = true }
+                if (currentRoute != Routes.BENEFICIARIO_ORDER) {
+                    navController.navigate(Routes.BENEFICIARIO_ORDER) {
+                        popUpTo(Routes.BENEFICIARIO_ORDER) { saveState = true }
                     }
                 }
             }
@@ -62,16 +62,16 @@ fun StudentBottomBar(navController: NavController) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
             label = { Text("Perfil") },
-            selected = currentRoute == Routes.STUDENT_PROFILE,
+            selected = currentRoute == Routes.BENEFICIARIO_PROFILE,
             colors = NavigationBarItemDefaults.colors(
                 selectedIconColor = IPCAGreen,
                 selectedTextColor = IPCAGreen,
                 indicatorColor = IPCAGreen.copy(alpha = 0.1f)
             ),
             onClick = {
-                if (currentRoute != Routes.STUDENT_PROFILE) {
-                    navController.navigate(Routes.STUDENT_PROFILE) {
-                        popUpTo(Routes.STUDENT_DASHBOARD) { saveState = true }
+                if (currentRoute != Routes.BENEFICIARIO_PROFILE) {
+                    navController.navigate(Routes.BENEFICIARIO_PROFILE) {
+                        popUpTo(Routes.BENEFICIARIO_DASHBOARD) { saveState = true }
                     }
                 }
             }

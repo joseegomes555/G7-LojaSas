@@ -1,11 +1,11 @@
 package ipca.lojasas.data.repository
 
-import android.util.Log
+import android.graphics.Bitmap
+import android.util.Base64
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
-import ipca.lojasas.domain.model.Beneficiario
-import ipca.lojasas.domain.model.ItemPedido
 import ipca.lojasas.domain.model.Lote
 import ipca.lojasas.domain.model.Pedido
 import ipca.lojasas.domain.model.Produto
@@ -14,215 +14,128 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import java.util.Calendar
+import java.io.ByteArrayOutputStream
+import java.util.Date
 
 class LojaRepositoryImpl(
-    private val db: FirebaseFirestore
+    private val db: FirebaseFirestore,
+    private val auth: FirebaseAuth
 ) : LojaRepository {
 
-    override fun getProdutos(): Flow<List<Produto>> = callbackFlow {
-        val listener = db.collection("produtos").addSnapshotListener { value, _ ->
-            val lista = value?.toObjects(Produto::class.java) ?: emptyList()
-            value?.documents?.forEachIndexed { i, doc -> lista[i].id = doc.id }
-            trySend(lista)
-        }
+    override fun getProdutosCatalogo(): Flow<List<Produto>> = callbackFlow {
+        val listener = db.collection("produtos").orderBy("nome")
+            .addSnapshotListener { value, _ -> trySend(value?.toObjects(Produto::class.java) ?: emptyList()) }
         awaitClose { listener.remove() }
     }
 
-    override fun getLotes(): Flow<List<Lote>> = callbackFlow {
-        val listener = db.collection("lotes").addSnapshotListener { value, _ ->
-            val lista = mutableListOf<Lote>()
-            value?.documents?.forEach { doc ->
-                doc.toObject(Lote::class.java)?.let { lote ->
-                    lote.id = doc.id
-                    lista.add(lote)
-                }
-            }
-            trySend(lista)
-        }
-        awaitClose { listener.remove() }
-    }
-
-    override fun getPedidosPorAluno(uid: String): Flow<List<Pedido>> = callbackFlow {
-        val listener = db.collection("pedidos")
-            .whereEqualTo("uid", uid)
-            .addSnapshotListener { value, e ->
-                if (e != null) {
-                    return@addSnapshotListener
-                }
-                val lista = mutableListOf<Pedido>()
-                value?.documents?.forEach { doc ->
-                    doc.toObject(Pedido::class.java)?.let { p ->
-                        p.id = doc.id
-                        lista.add(p)
-                    }
-                }
-                lista.sortByDescending { it.dataPedido }
-                trySend(lista)
-            }
-        awaitClose { listener.remove() }
-    }
-
-    override fun getPedidosPendentes(): Flow<List<Pedido>> = callbackFlow {
-        val listener = db.collection("pedidos")
-            .whereEqualTo("estado", "Pendente")
-            .orderBy("dataPedido", Query.Direction.ASCENDING)
+    override fun getLotesStock(): Flow<List<Lote>> = callbackFlow {
+        val listener = db.collection("lotes").orderBy("dataValidade")
             .addSnapshotListener { value, _ ->
-                val lista = mutableListOf<Pedido>()
-                value?.documents?.forEach { doc ->
-                    doc.toObject(Pedido::class.java)?.let { p ->
-                        p.id = doc.id
-                        lista.add(p)
-                    }
-                }
-                trySend(lista)
+                val list = value?.documents?.mapNotNull { doc ->
+                    val l = doc.toObject(Lote::class.java)
+                    l?.id = doc.id
+                    l
+                } ?: emptyList()
+                trySend(list)
             }
         awaitClose { listener.remove() }
     }
 
-    override suspend fun criarPedido(pedido: Pedido): Result<Boolean> {
-        return try {
-            db.collection("pedidos").add(pedido).await()
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
+    override fun getPerfilUsuario(uid: String): Flow<Map<String, Any>?> = callbackFlow {
+        val listener = db.collection("utilizadores").whereEqualTo("uid", uid).limit(1)
+            .addSnapshotListener { value, _ ->
+                val data = if (value != null && !value.isEmpty) value.documents[0].data else null
+                trySend(data)
+            }
+        awaitClose { listener.remove() }
     }
 
-    override suspend fun abaterStock(itens: List<ItemPedido>): Result<Boolean> {
-        return try {
-            itens.forEach { item ->
-                var qtdParaRemover = item.quantidade
-                // Pesquisa simples
-                val snapshot = db.collection("lotes")
-                    .whereEqualTo("nomeProduto", item.nome)
-                    .get().await()
-
-                // Ordenação em memória (FIFO)
-                val lotesOrdenados = snapshot.documents.sortedBy {
-                    it.getTimestamp("dataValidade") ?: Timestamp.Companion.now()
-                }
-
-                for (doc in lotesOrdenados) {
-                    if (qtdParaRemover <= 0) break
-                    val qtdNoLote = doc.getLong("quantidade")?.toInt() ?: 0
-
-                    if (qtdNoLote > 0) {
-                        if (qtdNoLote > qtdParaRemover) {
-                            db.collection("lotes").document(doc.id)
-                                .update("quantidade", qtdNoLote - qtdParaRemover)
-                            qtdParaRemover = 0
-                        } else {
-                            db.collection("lotes").document(doc.id).delete()
-                            qtdParaRemover -= qtdNoLote
+    override fun getMeusPedidos(uid: String): Flow<List<Pedido>> = callbackFlow {
+        val authListener = FirebaseAuth.AuthStateListener { firebaseAuth ->
+            val user = firebaseAuth.currentUser
+            if (user != null && user.email != null) {
+                db.collection("pedidos")
+                    .whereEqualTo("email", user.email)
+                    .orderBy("dataPedido", Query.Direction.DESCENDING)
+                    .addSnapshotListener { value, error ->
+                        if (error != null) {
+                            return@addSnapshotListener
                         }
+                        val list = value?.documents?.mapNotNull { doc ->
+                            val p = doc.toObject(Pedido::class.java)
+                            p?.id = doc.id
+                            p
+                        } ?: emptyList()
+                        trySend(list)
                     }
-                }
+            } else {
+                trySend(emptyList())
             }
-            Result.success(true)
-        } catch (e: Exception) {
-            Log.e("Repo", "Erro abate", e)
-            Result.failure(e)
+        }
+
+        auth.addAuthStateListener(authListener)
+        authListener.onAuthStateChanged(auth)
+
+        awaitClose { auth.removeAuthStateListener(authListener) }
+    }
+
+    override fun getTodosPedidos(): Flow<List<Pedido>> = callbackFlow {
+        val listener = db.collection("pedidos").orderBy("dataPedido", Query.Direction.DESCENDING)
+            .addSnapshotListener { value, _ ->
+                val list = value?.documents?.mapNotNull { doc ->
+                    val p = doc.toObject(Pedido::class.java)
+                    p?.id = doc.id
+                    p
+                } ?: emptyList()
+                trySend(list)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    override suspend fun fazerPedido(pedido: Pedido): Boolean {
+        return try { db.collection("pedidos").add(pedido).await(); true } catch (e: Exception) { false }
+    }
+
+    override suspend fun cancelarPedido(pedidoId: String, motivo: String) {
+        db.collection("pedidos").document(pedidoId)
+            .update(
+                "estado", "Cancelado",
+                "motivoCancelamento", motivo,
+                "autorCancelamento", "Beneficiário"
+            ).await()
+    }
+
+    override suspend fun aceitarReagendamento(pedidoId: String, novaData: Timestamp) {
+        db.collection("pedidos").document(pedidoId).update(mapOf("estado" to "Pendente", "dataLevantamento" to novaData, "propostaReagendamento" to null)).await()
+    }
+
+    override suspend fun adicionarLote(lote: Lote) { db.collection("lotes").add(lote).await() }
+
+    override suspend fun eliminarLote(loteId: String, motivo: String, loteInfo: Lote) {
+        val log = hashMapOf("acao" to "Eliminar", "loteId" to loteId, "motivo" to motivo, "data" to Timestamp.now())
+        db.collection("logs_stock").add(log)
+        db.collection("lotes").document(loteId).delete().await()
+    }
+
+    override suspend fun atualizarEstadoPedido(pedidoId: String, novoEstado: String) {
+        db.collection("pedidos").document(pedidoId).update("estado", novoEstado).await()
+    }
+
+    override suspend fun reagendarPedido(pedidoId: String, novaData: Long) {
+        val timestamp = Timestamp(Date(novaData))
+        db.collection("pedidos").document(pedidoId).update(mapOf("estado" to "Reagendamento", "propostaReagendamento" to timestamp, "autorReagendamento" to "Colaborador")).await()
+    }
+
+    override fun uploadFotoPerfil(bitmap: Bitmap, uid: String, onComplete: (Boolean) -> Unit) {
+        val baos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 50, baos)
+        val base64String = Base64.encodeToString(baos.toByteArray(), Base64.DEFAULT)
+        db.collection("utilizadores").whereEqualTo("uid", uid).get().addOnSuccessListener { docs ->
+            if (!docs.isEmpty) {
+                db.collection("utilizadores").document(docs.documents[0].id).update("fotoPerfil", base64String).addOnSuccessListener { onComplete(true) }
+            }
         }
     }
 
-    override suspend fun cancelarPedido(pedido: Pedido): Result<Boolean> {
-        return try {
-            db.collection("pedidos").document(pedido.id).update("estado", "Cancelado").await()
-            // Repor Stock
-            pedido.itens.forEach { item ->
-                val snapshot = db.collection("lotes")
-                    .whereEqualTo("nomeProduto", item.nome).limit(1).get().await()
-
-                if (!snapshot.isEmpty) {
-                    val doc = snapshot.documents[0]
-                    val atual = doc.getLong("quantidade")?.toInt() ?: 0
-                    db.collection("lotes").document(doc.id).update("quantidade", atual + item.quantidade)
-                } else {
-                    val cal = Calendar.getInstance()
-                    cal.add(Calendar.DAY_OF_YEAR, 30)
-                    val lote = hashMapOf(
-                        "nomeProduto" to item.nome,
-                        "quantidade" to item.quantidade,
-                        "dataValidade" to Timestamp(cal.time),
-                        "categoria" to "Reposição",
-                        "origem" to "Devolução",
-                        "dataEntrada" to Timestamp.Companion.now()
-                    )
-                    db.collection("lotes").add(lote)
-                }
-            }
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
-    override suspend fun processarEntrega(pedidoId: String): Result<Boolean> {
-        return try {
-            db.collection("pedidos").document(pedidoId).update("estado", "Entregue").await()
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
-    override suspend fun adicionarLote(lote: Lote): Result<Boolean> {
-        return try {
-            db.collection("lotes").add(lote).await()
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
-    override suspend fun removerStockManual(loteId: String, qtdAtual: Int, qtdRemover: Int): Result<Boolean> {
-        return try {
-            val novaQtd = qtdAtual - qtdRemover
-            if (novaQtd <= 0) {
-                db.collection("lotes").document(loteId).delete().await()
-            } else {
-                db.collection("lotes").document(loteId).update("quantidade", novaQtd).await()
-            }
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
-    override suspend fun getPerfilUsuario(uid: String): Beneficiario? {
-        return try {
-            val doc = db.collection("utilizadores").document(uid).get().await()
-            doc.toObject(Beneficiario::class.java)
-        } catch (e: Exception) { null }
-    }
-
-    override suspend fun solicitarCancelamento(pedidoId: String, motivo: String): Result<Boolean> {
-        return try {
-            db.collection("pedidos").document(pedidoId).update(
-                mapOf(
-                    "estado" to "Cancelamento Solicitado",
-                    "motivoCancelamento" to motivo
-                )
-            ).await()
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
-    override suspend fun proporReagendamento(pedidoId: String, novaData: Timestamp, autor: String): Result<Boolean> {
-        return try {
-            db.collection("pedidos").document(pedidoId).update(
-                mapOf(
-                    "estado" to "Reagendamento",
-                    "propostaReagendamento" to novaData,
-                    "autorReagendamento" to autor
-                )
-            ).await()
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
-    override suspend fun aceitarReagendamento(pedidoId: String, novaData: Timestamp): Result<Boolean> {
-        return try {
-            db.collection("pedidos").document(pedidoId).update(
-                mapOf(
-                    "estado" to "Pendente", // Volta ao estado normal
-                    "dataLevantamento" to novaData,
-                    "propostaReagendamento" to null // Limpa a proposta
-                )
-            ).await()
-            Result.success(true)
-        } catch (e: Exception) { Result.failure(e) }
-    }
-
+    override suspend fun logout() { auth.signOut() }
 }

@@ -1,18 +1,8 @@
 package ipca.lojasas.domain.model
 
 import com.google.firebase.Timestamp
-import java.util.Date
 
-data class Beneficiario(
-    var uid: String = "",
-    var nome: String = "",
-    var email: String = "",
-    var nif: String = "",
-    var telefone: String = "",
-    var fotoUrl: String = ""
-)
-
-// 1. Modelo de LOTE
+// Modelo de LOTE (Stock real)
 data class Lote(
     var id: String = "",
     val nomeProduto: String = "",
@@ -23,32 +13,34 @@ data class Lote(
     val dataEntrada: Timestamp? = null
 )
 
-// 2. Modelo de Produto
+// Modelo de Produto (Catálogo)
 data class Produto(
     var id: String = "",
     val nome: String = "",
     val categoria: String = ""
 )
 
-// 3. Item
+// Item do Pedido
 data class ItemPedido(
     val nome: String = "",
     val quantidade: Int = 0
 )
 
-// 4. PEDIDO
+// PEDIDO
 data class Pedido(
     var id: String = "",
     val uid: String = "",
     val email: String = "",
-    val nomeAluno: String = "",
-    val numAluno: String = "",
+    val nomeBeneficiario: String = "",
+    val numBeneficiario: String = "",
     val itens: List<ItemPedido> = emptyList(),
     val urgencia: String = "Normal",
     val estado: String = "Pendente",
     val dataPedido: Timestamp? = null,
     val dataLevantamento: Timestamp? = null,
-    val autorReagendamento: String = "",   // "Staff" ou "Aluno"
+
+    // Campos de Gestão
+    val autorReagendamento: String = "",
     val propostaReagendamento: Timestamp? = null,
     val motivoCancelamento: String = ""
 )

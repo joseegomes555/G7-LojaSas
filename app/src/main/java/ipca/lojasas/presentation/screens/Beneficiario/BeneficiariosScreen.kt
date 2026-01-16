@@ -1,4 +1,4 @@
-package ipca.lojasas.presentation.screens.Beneficiarios
+package ipca.lojasas.presentation.screens.Beneficiario
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
-import ipca.lojasas.presentation.components.BottomBar
+import ipca.lojasas.presentation.components.ColaboradorBottomBar
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -50,7 +50,7 @@ fun BeneficiariosScreen(navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = IPCAGreen)
             )
         },
-        bottomBar = { BottomBar(navController) }, // <--- O MENU ESTÁ AQUI
+        bottomBar = { ColaboradorBottomBar(navController) },
         floatingActionButton = {
             FloatingActionButton(onClick = { showDialog = true }, containerColor = IPCAGreen, contentColor = Color.White) {
                 Icon(Icons.Default.Add, contentDescription = "Adicionar")
