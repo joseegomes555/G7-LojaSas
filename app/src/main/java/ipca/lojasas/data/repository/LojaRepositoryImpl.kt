@@ -186,4 +186,43 @@ class LojaRepositoryImpl(
             doc.toObject(Beneficiario::class.java)
         } catch (e: Exception) { null }
     }
+
+    override suspend fun solicitarCancelamento(pedidoId: String, motivo: String): Result<Boolean> {
+        return try {
+            db.collection("pedidos").document(pedidoId).update(
+                mapOf(
+                    "estado" to "Cancelamento Solicitado",
+                    "motivoCancelamento" to motivo
+                )
+            ).await()
+            Result.success(true)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    override suspend fun proporReagendamento(pedidoId: String, novaData: Timestamp, autor: String): Result<Boolean> {
+        return try {
+            db.collection("pedidos").document(pedidoId).update(
+                mapOf(
+                    "estado" to "Reagendamento",
+                    "propostaReagendamento" to novaData,
+                    "autorReagendamento" to autor
+                )
+            ).await()
+            Result.success(true)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    override suspend fun aceitarReagendamento(pedidoId: String, novaData: Timestamp): Result<Boolean> {
+        return try {
+            db.collection("pedidos").document(pedidoId).update(
+                mapOf(
+                    "estado" to "Pendente", // Volta ao estado normal
+                    "dataLevantamento" to novaData,
+                    "propostaReagendamento" to null // Limpa a proposta
+                )
+            ).await()
+            Result.success(true)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
 }

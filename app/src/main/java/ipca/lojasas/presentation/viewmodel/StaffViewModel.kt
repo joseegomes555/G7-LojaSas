@@ -1,81 +1,119 @@
 package ipca.lojasas.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
+import com.google.firebase.firestore.Query
 import ipca.lojasas.domain.model.Lote
 import ipca.lojasas.domain.model.Pedido
-import ipca.lojasas.domain.repository.LojaRepository
-import ipca.lojasas.domain.usecase.CancelarPedidoUseCase
+import ipca.lojasas.domain.model.Produto
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
+import java.util.Date
 
-class StaffViewModel(
-    private val repository: LojaRepository,
-    private val cancelarPedidoUseCase: CancelarPedidoUseCase
-) : ViewModel() {
+class StaffViewModel : ViewModel() {
 
-    val pedidosPendentes = repository.getPedidosPendentes()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    private val db = FirebaseFirestore.getInstance()
 
-    val produtosMestres = repository.getProdutos()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+    // Estados
+    private val _todosPedidos = MutableStateFlow<List<Pedido>>(emptyList())
+    val todosPedidos: StateFlow<List<Pedido>> = _todosPedidos.asStateFlow()
 
-    private val _lotesList = MutableStateFlow<List<Lote>>(emptyList())
-    val lotesList = _lotesList.asStateFlow()
+    private val _lotes = MutableStateFlow<List<Lote>>(emptyList())
+    val lotes: StateFlow<List<Lote>> = _lotes.asStateFlow()
 
-    private val _alertasValidade = MutableStateFlow<List<Lote>>(emptyList())
-    val alertasValidade = _alertasValidade.asStateFlow()
+    // Lista de Produtos (Catálogo) para o Dropdown
+    private val _produtosCatalogo = MutableStateFlow<List<Produto>>(emptyList())
+    val produtosCatalogo: StateFlow<List<Produto>> = _produtosCatalogo.asStateFlow()
+
+    private var listeners = mutableListOf<ListenerRegistration>()
 
     init {
-        viewModelScope.launch {
-            repository.getLotes().collect { lista ->
-                _lotesList.value = lista
-                _alertasValidade.value = lista.filter { it.diasParaExpirar() <= 5 }
-                    .sortedBy { it.diasParaExpirar() }
+        startPedidosListener()
+        startStockListener()
+        startCatalogoListener()
+    }
+
+    private fun startPedidosListener() {
+        val l = db.collection("pedidos").orderBy("dataPedido", Query.Direction.DESCENDING)
+            .addSnapshotListener { value, error ->
+                if (error != null) return@addSnapshotListener
+                val list = value?.documents?.mapNotNull { doc ->
+                    val p = doc.toObject(Pedido::class.java)
+                    p?.id = doc.id
+                    p
+                } ?: emptyList()
+                _todosPedidos.value = list
             }
-        }
+        listeners.add(l)
     }
 
-    fun processarEntrega(pedidoId: String) {
-        viewModelScope.launch {
-            repository.processarEntrega(pedidoId)
-        }
+    private fun startStockListener() {
+        val l = db.collection("lotes").orderBy("dataValidade")
+            .addSnapshotListener { value, error ->
+                if (error != null) return@addSnapshotListener
+                val list = value?.documents?.mapNotNull { doc ->
+                    val lot = doc.toObject(Lote::class.java)
+                    lot?.id = doc.id
+                    lot
+                } ?: emptyList()
+                _lotes.value = list
+            }
+        listeners.add(l)
     }
 
-    fun cancelarPedido(pedido: Pedido) {
-        viewModelScope.launch {
-            cancelarPedidoUseCase(pedido)
-        }
+    private fun startCatalogoListener() {
+        val l = db.collection("produtos").orderBy("nome")
+            .addSnapshotListener { value, error ->
+                if (error != null) return@addSnapshotListener
+                val list = value?.toObjects(Produto::class.java) ?: emptyList()
+                _produtosCatalogo.value = list
+            }
+        listeners.add(l)
     }
 
-    fun adicionarNovoLote(lote: Lote, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val res = repository.adicionarLote(lote)
-            onResult(res.isSuccess)
-        }
+    fun atualizarEstadoPedido(pedidoId: String, novoEstado: String) {
+        db.collection("pedidos").document(pedidoId).update("estado", novoEstado)
     }
 
-    fun criarLoteParaAdicionar(nome: String, qtd: Int, validade: java.util.Date, cat: String, orig: String) {
-        val novoLote = Lote(
-            nomeProduto = nome,
-            quantidade = qtd,
-            dataValidade = com.google.firebase.Timestamp(validade),
-            categoria = cat,
-            origem = orig
+    // --- REAGENDAR PEDIDO ---
+    fun reagendarPedido(pedidoId: String, novaData: Long) {
+        val timestamp = Timestamp(Date(novaData))
+        db.collection("pedidos").document(pedidoId).update(
+            mapOf(
+                "estado" to "Reagendamento",
+                "propostaReagendamento" to timestamp,
+                "autorReagendamento" to "Staff"
+            )
         )
-        adicionarNovoLote(novoLote) {}
     }
 
-    fun removerStock(lote: Lote, qtd: Int, motivo: String, onResult: (Boolean) -> Unit) {
-        viewModelScope.launch {
-            val res = repository.removerStockManual(lote.id, lote.quantidade, qtd)
-            onResult(res.isSuccess)
-        }
+    fun adicionarLote(nomeProduto: String, categoria: String, quantidade: Int, dataValidade: Long) {
+        val validadeTs = Timestamp(Date(dataValidade))
+        val lote = hashMapOf(
+            "nomeProduto" to nomeProduto,
+            "categoria" to categoria,
+            "quantidade" to quantidade,
+            "origem" to "Manual",
+            "dataEntrada" to Timestamp.now(),
+            "dataValidade" to validadeTs
+        )
+        db.collection("lotes").add(lote)
     }
 
-    fun logout() { FirebaseAuth.getInstance().signOut() }
+    fun eliminarLote(loteId: String) {
+        db.collection("lotes").document(loteId).delete()
+    }
+
+    fun eliminarProduto(produtoId: String) {
+        // Função opcional se quiseres apagar do catalogo, mas no stockScreen usamos apagar lote
+        db.collection("produtos").document(produtoId).delete()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        listeners.forEach { it.remove() }
+    }
 }

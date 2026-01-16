@@ -1,13 +1,10 @@
 package ipca.lojasas.presentation.screens.Beneficiarios
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,33 +16,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.firebase.firestore.FirebaseFirestore
-import ipca.lojasas.Routes
-import ipca.lojasas.presentation.components.AppBottomBar
+import ipca.lojasas.presentation.components.BottomBar
 import ipca.lojasas.ui.theme.IPCAGreen
-
-// Modelo atualizado com mais dados
-data class Beneficiario(
-    var id: String = "", // ID do documento no Firestore
-    val email: String = "",
-    val nome: String = "Benefeciário IPCA",
-    val nif: String = "--",
-    val dataNascimento: String = "--",
-    val tipo: String = ""
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BeneficiariosScreen(navController: NavController) {
-    var lista by remember { mutableStateOf(listOf<Beneficiario>()) }
+    var showDialog by remember { mutableStateOf(false) }
     val db = FirebaseFirestore.getInstance()
+    var listaBeneficiarios by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
 
+    // Carrega dados da BD
     LaunchedEffect(Unit) {
         db.collection("utilizadores")
-            .whereEqualTo("tipo", "aluno")
-            .get()
-            .addOnSuccessListener { result ->
-                lista = result.map { doc ->
-                    doc.toObject(Beneficiario::class.java).apply { id = doc.id }
+            .whereEqualTo("tipo", "Beneficiario")
+            .addSnapshotListener { docs, _ ->
+                if (docs != null) {
+                    listaBeneficiarios = docs.documents.map { doc ->
+                        val data = doc.data ?: mutableMapOf()
+                        val mapa = data.toMutableMap()
+                        mapa["id"] = doc.id
+                        mapa
+                    }
                 }
             }
     }
@@ -53,47 +45,100 @@ fun BeneficiariosScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Beneficiários", color = Color.White) },
+                title = { Text("Gestão de Beneficiários", color = Color.White) },
+                // Seta de voltar removida intencionalmente
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = IPCAGreen)
             )
         },
-        bottomBar = { AppBottomBar(navController, Routes.STAFF_BENEFICIARIOS) }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            item {
-                Text("Total: ${lista.size} beneficiários ativos", color = Color.Gray, fontSize = 12.sp, modifier = Modifier.padding(bottom = 8.dp))
+        bottomBar = { BottomBar(navController) }, // <--- O MENU ESTÁ AQUI
+        floatingActionButton = {
+            FloatingActionButton(onClick = { showDialog = true }, containerColor = IPCAGreen, contentColor = Color.White) {
+                Icon(Icons.Default.Add, contentDescription = "Adicionar")
             }
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
 
-            items(lista) { aluno ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // Ação de Clique: Navega para o detalhe enviando o ID do aluno
-                        .clickable {
-                            navController.navigate("staff_beneficiario_detail/${aluno.id}")
-                        },
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    elevation = CardDefaults.cardElevation(1.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.size(40.dp).background(Color(0xFFE0E0E0), CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray)
+            if (listaBeneficiarios.isEmpty()) {
+                // Mensagem quando não há ninguém
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("A lista está vazia.\nClica no botão + para adicionar.", color = Color.Gray, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                }
+            } else {
+                LazyColumn(modifier = Modifier.padding(16.dp)) {
+                    items(listaBeneficiarios) { user ->
+                        val nome = user["nome"] as? String ?: "Sem Nome"
+                        val email = user["email"] as? String ?: ""
+                        val tipo = user["tipo_vinculo"] as? String ?: "Aluno"
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                            onClick = {
+                                val userId = user["id"] as? String ?: ""
+                                if (userId.isNotEmpty()) navController.navigate("beneficiario_detail/$userId")
+                            },
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(2.dp)
+                        ) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Person, null, tint = IPCAGreen)
+                                Spacer(Modifier.width(16.dp))
+                                Column {
+                                    Text(nome, fontWeight = FontWeight.Bold)
+                                    Text(email, fontSize = 12.sp, color = Color.Gray)
+                                    Text(tipo, fontSize = 12.sp, color = IPCAGreen, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(aluno.nome, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text(aluno.email, color = Color.Gray, fontSize = 12.sp)
-                        }
-                        Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Ver detalhe", tint = Color.Gray)
                     }
                 }
             }
         }
+
+        if (showDialog) {
+            AddComunidadeDialog(
+                onDismiss = { showDialog = false },
+                onConfirm = { nome, email, tipo ->
+                    val novoUser = hashMapOf(
+                        "nome" to nome,
+                        "email" to email,
+                        "tipo_vinculo" to tipo,
+                        "tipo" to "Beneficiario",
+                        "ativo" to true,
+                        "dataCriacao" to com.google.firebase.Timestamp.now()
+                    )
+                    db.collection("utilizadores").add(novoUser)
+                    showDialog = false
+                }
+            )
+        }
     }
+}
+
+@Composable
+fun AddComunidadeDialog(onDismiss: () -> Unit, onConfirm: (String, String, String) -> Unit) {
+    var nome by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var tipo by remember { mutableStateOf("Docente") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Registar Novo") },
+        text = {
+            Column {
+                OutlinedTextField(value = nome, onValueChange = { nome = it }, label = { Text("Nome") })
+                OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") })
+                Spacer(Modifier.height(8.dp))
+                Row {
+                    RadioButton(selected = tipo == "Docente", onClick = { tipo = "Docente" })
+                    Text("Docente", modifier = Modifier.align(Alignment.CenterVertically))
+                    Spacer(Modifier.width(8.dp))
+                    RadioButton(selected = tipo == "Funcionário", onClick = { tipo = "Funcionário" })
+                    Text("Funcionário", modifier = Modifier.align(Alignment.CenterVertically))
+                }
+            }
+        },
+        confirmButton = { Button(onClick = { if(nome.isNotEmpty()) onConfirm(nome, email, tipo) }, colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen)) { Text("Adicionar") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } }
+    )
 }

@@ -1,66 +1,88 @@
 package ipca.lojasas.presentation.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import ipca.lojasas.R
+import ipca.lojasas.Routes
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @Composable
-fun AuthChoiceScreen(
-    onStudentClick: () -> Unit,
-    onStaffClick: () -> Unit
-) {
-    Scaffold { padding ->
+fun AuthChoiceScreen(navController: NavController) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
         Column(
-            modifier = Modifier
-                .padding(padding)
-                .padding(24.dp)
-                .fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(24.dp)
         ) {
-            // Título / Logo
             Text(
-                text = "Loja Social",
-                style = MaterialTheme.typography.headlineLarge,
+                text = "Loja Social SAS",
+                style = MaterialTheme.typography.displayMedium,
                 fontWeight = FontWeight.Bold,
-                color = IPCAGreen
+                color = IPCAGreen,
+                textAlign = TextAlign.Center
             )
             Text(
-                text = "SAS IPCA",
+                text = "Bem-vindo",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Gray
             )
 
-            Spacer(Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(48.dp))
 
-            // Botão Aluno
+            // BOTÃO LOGIN BENEFICIÁRIO
             Button(
-                onClick = onStudentClick,
+                onClick = { navController.navigate(Routes.STUDENT_LOGIN) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen),
-                shape = MaterialTheme.shapes.medium
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Beneficiário")
+                Text("Login Beneficiário", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-            // Botão Staff
+            // BOTÃO LOGIN STAFF
             OutlinedButton(
-                onClick = onStaffClick,
+                onClick = { navController.navigate(Routes.STAFF_LOGIN) },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = IPCAGreen),
-                border = BorderStroke(1.dp, IPCAGreen),
-                shape = MaterialTheme.shapes.medium
+                border = BorderStroke(2.dp, IPCAGreen),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Colaborador (SAS)")
+                Text("Login Staff", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // BOTÃO CANDIDATURA (Separado)
+            Text("Ainda não tens acesso?", color = Color.Gray, fontSize = 14.sp)
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                onClick = { navController.navigate("candidacy") },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE0E0E0), contentColor = Color.Black),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text("Fazer Candidatura")
             }
         }
     }

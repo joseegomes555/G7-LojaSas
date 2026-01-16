@@ -6,34 +6,75 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import ipca.lojasas.Routes
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @Composable
-fun StudentBottomBar(navController: NavController, currentRoute: String) {
+fun StudentBottomBar(navController: NavController) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
     NavigationBar(containerColor = Color.White) {
+
+        // 1. INÍCIO (Dashboard)
         NavigationBarItem(
-            selected = currentRoute == Routes.STUDENT_DASHBOARD,
-            onClick = { navController.navigate(Routes.STUDENT_DASHBOARD) },
             icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
             label = { Text("Início") },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen)
+            selected = currentRoute == Routes.STUDENT_DASHBOARD,
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = IPCAGreen,
+                selectedTextColor = IPCAGreen,
+                indicatorColor = IPCAGreen.copy(alpha = 0.1f)
+            ),
+            onClick = {
+                if (currentRoute != Routes.STUDENT_DASHBOARD) {
+                    navController.navigate(Routes.STUDENT_DASHBOARD) {
+                        popUpTo(Routes.STUDENT_DASHBOARD) { inclusive = true }
+                    }
+                }
+            }
         )
+
+        // 2. FAZER PEDIDO
         NavigationBarItem(
-            selected = currentRoute == Routes.STUDENT_ORDER,
-            onClick = { navController.navigate(Routes.STUDENT_ORDER) },
             icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Pedir") },
             label = { Text("Pedir") },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen)
+            selected = currentRoute == Routes.STUDENT_ORDER,
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = IPCAGreen,
+                selectedTextColor = IPCAGreen,
+                indicatorColor = IPCAGreen.copy(alpha = 0.1f)
+            ),
+            onClick = {
+                if (currentRoute != Routes.STUDENT_ORDER) {
+                    navController.navigate(Routes.STUDENT_ORDER) {
+                        popUpTo(Routes.STUDENT_DASHBOARD) { saveState = true }
+                    }
+                }
+            }
         )
+
+        // 3. PERFIL
         NavigationBarItem(
-            selected = currentRoute == Routes.STUDENT_PROFILE,
-            onClick = { navController.navigate(Routes.STUDENT_PROFILE) },
             icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
             label = { Text("Perfil") },
-            colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen)
+            selected = currentRoute == Routes.STUDENT_PROFILE,
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = IPCAGreen,
+                selectedTextColor = IPCAGreen,
+                indicatorColor = IPCAGreen.copy(alpha = 0.1f)
+            ),
+            onClick = {
+                if (currentRoute != Routes.STUDENT_PROFILE) {
+                    navController.navigate(Routes.STUDENT_PROFILE) {
+                        popUpTo(Routes.STUDENT_DASHBOARD) { saveState = true }
+                    }
+                }
+            }
         )
     }
 }

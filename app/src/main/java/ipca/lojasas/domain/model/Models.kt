@@ -12,41 +12,43 @@ data class Beneficiario(
     var fotoUrl: String = ""
 )
 
-data class Produto(
-    var id: String = "",
-    var nome: String = "",
-    var categoria: String = ""
-)
-
+// 1. Modelo de LOTE
 data class Lote(
     var id: String = "",
-    var nomeProduto: String = "",
-    var quantidade: Int = 0,
-    var dataValidade: Timestamp? = null,
-    var categoria: String = "",
-    var origem: String = "",
-    var dataEntrada: Timestamp? = null
-) {
-    fun diasParaExpirar(): Long {
-        if (dataValidade == null) return 0
-        val diff = dataValidade!!.toDate().time - Date().time
-        return diff / (1000 * 60 * 60 * 24)
-    }
-}
-
-data class Pedido(
-    var id: String = "",
-    var uid: String = "",
-    var email: String = "",
-    var nomeAluno: String = "",
-    var numAluno: String = "",
-    var itens: List<ItemPedido> = emptyList(),
-    var urgencia: String = "",
-    var dataPedido: Timestamp? = null,
-    var estado: String = ""
+    val nomeProduto: String = "",
+    val categoria: String = "",
+    val quantidade: Int = 0,
+    val dataValidade: Timestamp? = null,
+    val origem: String = "Manual",
+    val dataEntrada: Timestamp? = null
 )
 
+// 2. Modelo de Produto
+data class Produto(
+    var id: String = "",
+    val nome: String = "",
+    val categoria: String = ""
+)
+
+// 3. Item
 data class ItemPedido(
-    var nome: String = "",
-    var quantidade: Int = 0
+    val nome: String = "",
+    val quantidade: Int = 0
+)
+
+// 4. PEDIDO
+data class Pedido(
+    var id: String = "",
+    val uid: String = "",
+    val email: String = "",
+    val nomeAluno: String = "",
+    val numAluno: String = "",
+    val itens: List<ItemPedido> = emptyList(),
+    val urgencia: String = "Normal",
+    val estado: String = "Pendente",
+    val dataPedido: Timestamp? = null,
+    val dataLevantamento: Timestamp? = null,
+    val autorReagendamento: String = "",   // "Staff" ou "Aluno"
+    val propostaReagendamento: Timestamp? = null,
+    val motivoCancelamento: String = ""
 )

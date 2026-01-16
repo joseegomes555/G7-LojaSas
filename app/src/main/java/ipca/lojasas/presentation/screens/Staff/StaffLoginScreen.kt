@@ -2,39 +2,44 @@ package ipca.lojasas.presentation.screens.Staff
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import ipca.lojasas.Routes
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaffLoginScreen(
-    onBack: () -> Unit,
-    onLoginSuccess: () -> Unit
-) {
+fun StaffLoginScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
-
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
-    val db = FirebaseFirestore.getInstance()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login Colaborador", color = Color.White) },
+                title = { Text("Acesso Staff", color = Color.White) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
                     }
                 },
@@ -45,25 +50,37 @@ fun StaffLoginScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
-                .padding(24.dp)
-                .fillMaxSize(),
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Text("Área Reservada", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = IPCAGreen)
+            Spacer(modifier = Modifier.height(32.dp))
+
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Email IPCA") },
-                modifier = Modifier.fillMaxWidth()
+                label = { Text("Email Institucional") },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
                 label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null)
+                    }
+                },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
             )
-            Spacer(Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
@@ -71,39 +88,26 @@ fun StaffLoginScreen(
                         isLoading = true
                         auth.signInWithEmailAndPassword(email, password)
                             .addOnCompleteListener { task ->
+                                isLoading = false
                                 if (task.isSuccessful) {
-                                    val uid = task.result.user?.uid
-                                    // Verificar na BD se é Staff
-                                    db.collection("utilizadores").document(uid ?: "")
-                                        .get()
-                                        .addOnSuccessListener { document ->
-                                            isLoading = false
-                                            val tipo = document.getString("tipo")
-
-                                            // Lógica de Segurança
-                                            if (tipo == "staff" || tipo == "admin") {
-                                                onLoginSuccess()
-                                            } else {
-                                                auth.signOut()
-                                                Toast.makeText(context, "Acesso negado: Apenas Staff.", Toast.LENGTH_LONG).show()
-                                            }
-                                        }
-                                        .addOnFailureListener {
-                                            isLoading = false
-                                            Toast.makeText(context, "Erro ao verificar permissões.", Toast.LENGTH_SHORT).show()
-                                        }
+                                    // SUCESSO: Vai para o Dashboard do Staff
+                                    navController.navigate(Routes.STAFF_DASHBOARD) {
+                                        popUpTo(Routes.CHOICE) { inclusive = false }
+                                    }
                                 } else {
-                                    isLoading = false
-                                    Toast.makeText(context, "Erro Login: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                                    Toast.makeText(context, "Erro: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
+                    } else {
+                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                enabled = !isLoading,
-                colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen)
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen),
+                enabled = !isLoading
             ) {
-                if (isLoading) CircularProgressIndicator(color = Color.White) else Text("Entrar")
+                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                else Text("Entrar como Staff", fontSize = 18.sp)
             }
         }
     }
