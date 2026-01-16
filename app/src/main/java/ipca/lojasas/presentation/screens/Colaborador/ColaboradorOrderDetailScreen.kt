@@ -1,4 +1,4 @@
-package ipca.lojasas.presentation.screens.Staff
+package ipca.lojasas.presentation.screens.Colaborador
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -19,22 +19,26 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import ipca.lojasas.di.AppModule
-import ipca.lojasas.presentation.viewmodel.StaffViewModel
+import ipca.lojasas.domain.model.Pedido
+import ipca.lojasas.presentation.viewmodel.ColaboradorViewModel
 import ipca.lojasas.ui.theme.IPCAGreen
 import ipca.lojasas.ui.theme.IPCARed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaffOrderDetailScreen(
+fun ColaboradorOrderDetailScreen(
     navController: NavController,
     pedidoId: String,
-    viewModel: StaffViewModel = viewModel(factory = AppModule.viewModelFactory)
+    viewModel: ColaboradorViewModel = viewModel(factory = AppModule.viewModelFactory)
 ) {
     val todosPedidos by viewModel.todosPedidos.collectAsState()
-    val pedido = todosPedidos.find { it.id == pedidoId }
+
+    val pedido = remember(todosPedidos, pedidoId) {
+        todosPedidos.find { it.id == pedidoId }
+    }
+
     val context = LocalContext.current
 
-    // Estados para Reagendamento
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
 
@@ -72,14 +76,19 @@ fun StaffOrderDetailScreen(
         }
     ) { padding ->
         if (pedido == null) {
+            // Loading state enquanto o pedido não é encontrado
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = IPCAGreen)
+                if (todosPedidos.isEmpty()) {
+                    CircularProgressIndicator(color = IPCAGreen) // Ainda a carregar lista
+                } else {
+                    Text("Pedido não encontrado.") // Lista carregada mas pedido não existe
+                }
             }
         } else {
             Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
 
-                Text("Aluno: ${pedido.nomeAluno}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                Text("Nº: ${pedido.numAluno}", color = Color.Gray)
+                Text("Beneficiário: ${pedido.nomeBeneficiario}", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text("Nº: ${pedido.numBeneficiario}", color = Color.Gray)
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Text("Produtos:", fontWeight = FontWeight.Bold)
@@ -119,7 +128,6 @@ fun StaffOrderDetailScreen(
                             ) { Text("Entregar") }
                         }
 
-                        // Botão Reagendar
                         OutlinedButton(
                             onClick = { showDatePicker = true },
                             modifier = Modifier.fillMaxWidth(),
@@ -127,7 +135,7 @@ fun StaffOrderDetailScreen(
                         ) {
                             Icon(Icons.Default.DateRange, null)
                             Spacer(Modifier.width(8.dp))
-                            Text("Sugerir Nova Data (Reagendar)")
+                            Text("Sugerir Nova Data")
                         }
                     }
                 } else {

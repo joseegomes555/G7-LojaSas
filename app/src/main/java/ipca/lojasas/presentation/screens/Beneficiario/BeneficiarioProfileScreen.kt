@@ -1,37 +1,68 @@
-package ipca.lojasas.presentation.screens.Students
+package ipca.lojasas.presentation.screens.Beneficiario
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Base64
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.google.firebase.auth.FirebaseAuth
 import ipca.lojasas.Routes
 import ipca.lojasas.di.AppModule
-import ipca.lojasas.presentation.components.StudentBottomBar
-import ipca.lojasas.presentation.viewmodel.StudentViewModel
+import ipca.lojasas.presentation.components.BeneficiarioBottomBar
+import ipca.lojasas.presentation.viewmodel.BeneficiarioViewModel
 import ipca.lojasas.ui.theme.IPCAGreen
 import ipca.lojasas.ui.theme.IPCARed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudentProfileScreen(
+fun BeneficiarioProfileScreen(
     navController: NavController,
-    viewModel: StudentViewModel = viewModel(factory = AppModule.viewModelFactory)
+    viewModel: BeneficiarioViewModel = viewModel(factory = AppModule.viewModelFactory)
 ) {
     val perfil by viewModel.perfilUser.collectAsState()
+    val context = LocalContext.current
+
+    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+
+                Toast.makeText(context, "A guardar foto...", Toast.LENGTH_SHORT).show()
+                // FIX: Renamed from uploadProfilePhoto to uploadFoto to match ViewModel
+                viewModel.uploadFoto(bitmap) { success ->
+                    if(success) Toast.makeText(context, "Foto atualizada!", Toast.LENGTH_SHORT).show()
+                    else Toast.makeText(context, "Erro ao guardar foto.", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -48,16 +79,50 @@ fun StudentProfileScreen(
                 }
             )
         },
-        bottomBar = { StudentBottomBar(navController) }
+        bottomBar = { BeneficiarioBottomBar(navController) }
     ) { padding ->
         Column(
             modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Spacer(modifier = Modifier.height(32.dp))
-            Box(modifier = Modifier.size(100.dp).background(Color.LightGray, CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(60.dp))
+
+            Box(contentAlignment = Alignment.BottomEnd) {
+                if (perfil != null && perfil!!["fotoPerfil"] != null) {
+                    val base64Str = perfil!!["fotoPerfil"] as String
+                    val imageBitmap = remember(base64Str) {
+                        try {
+                            val decodedBytes = Base64.decode(base64Str, Base64.DEFAULT)
+                            BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size).asImageBitmap()
+                        } catch (e: Exception) { null }
+                    }
+
+                    if (imageBitmap != null) {
+                        Image(
+                            bitmap = imageBitmap,
+                            contentDescription = "Foto Perfil",
+                            modifier = Modifier.size(120.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        AvatarPlaceholder()
+                    }
+                } else {
+                    AvatarPlaceholder()
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(IPCAGreen, CircleShape)
+                        .clickable { launcher.launch("image/*") }
+                        .padding(8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.Edit, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
             }
+
             Spacer(modifier = Modifier.height(16.dp))
 
             if (perfil == null) {
@@ -92,6 +157,13 @@ fun StudentProfileScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AvatarPlaceholder() {
+    Box(modifier = Modifier.size(120.dp).background(Color.LightGray, CircleShape), contentAlignment = Alignment.Center) {
+        Icon(Icons.Default.Person, null, tint = Color.White, modifier = Modifier.size(60.dp))
     }
 }
 

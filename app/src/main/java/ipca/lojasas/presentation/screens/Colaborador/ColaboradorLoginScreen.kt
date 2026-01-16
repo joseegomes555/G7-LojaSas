@@ -1,4 +1,4 @@
-package ipca.lojasas.presentation.screens.Staff
+package ipca.lojasas.presentation.screens.Colaborador
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -26,7 +26,7 @@ import ipca.lojasas.ui.theme.IPCAGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StaffLoginScreen(navController: NavController) {
+fun ColaboradorLoginScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -37,7 +37,7 @@ fun StaffLoginScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Acesso Staff", color = Color.White) },
+                title = { Text("Acesso Colaborador", color = Color.White) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
@@ -91,7 +91,7 @@ fun StaffLoginScreen(navController: NavController) {
                                 isLoading = false
                                 if (task.isSuccessful) {
                                     // SUCESSO: Vai para o Dashboard do Staff
-                                    navController.navigate(Routes.STAFF_DASHBOARD) {
+                                    navController.navigate(Routes.COLABORADOR_DASHBOARD) {
                                         popUpTo(Routes.CHOICE) { inclusive = false }
                                     }
                                 } else {
@@ -107,7 +107,7 @@ fun StaffLoginScreen(navController: NavController) {
                 enabled = !isLoading
             ) {
                 if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("Entrar como Staff", fontSize = 18.sp)
+                else Text("Entrar", fontSize = 18.sp)
             }
         }
     }

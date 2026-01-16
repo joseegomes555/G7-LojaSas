@@ -15,7 +15,7 @@ import ipca.lojasas.Routes
 import ipca.lojasas.ui.theme.IPCAGreen
 
 @Composable
-fun BottomBar(navController: NavController) {
+fun ColaboradorBottomBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -24,12 +24,12 @@ fun BottomBar(navController: NavController) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.Home, contentDescription = "Início") },
             label = { Text("Início") },
-            selected = currentRoute == Routes.STAFF_DASHBOARD,
+            selected = currentRoute == Routes.COLABORADOR_DASHBOARD,
             colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen, selectedTextColor = IPCAGreen, indicatorColor = IPCAGreen.copy(alpha = 0.1f)),
             onClick = {
-                if (currentRoute != Routes.STAFF_DASHBOARD) {
-                    navController.navigate(Routes.STAFF_DASHBOARD) {
-                        popUpTo(Routes.STAFF_DASHBOARD) { inclusive = true }
+                if (currentRoute != Routes.COLABORADOR_DASHBOARD) {
+                    navController.navigate(Routes.COLABORADOR_DASHBOARD) {
+                        popUpTo(Routes.COLABORADOR_DASHBOARD) { inclusive = true }
                     }
                 }
             }
@@ -39,12 +39,12 @@ fun BottomBar(navController: NavController) {
         NavigationBarItem(
             icon = { Icon(Icons.Default.ShoppingCart, contentDescription = "Stock") },
             label = { Text("Stock") },
-            selected = currentRoute == Routes.STAFF_STOCK,
+            selected = currentRoute == Routes.COLABORADOR_STOCK,
             colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen, selectedTextColor = IPCAGreen, indicatorColor = IPCAGreen.copy(alpha = 0.1f)),
             onClick = {
-                if (currentRoute != Routes.STAFF_STOCK) {
-                    navController.navigate(Routes.STAFF_STOCK) {
-                        popUpTo(Routes.STAFF_DASHBOARD) { saveState = true }
+                if (currentRoute != Routes.COLABORADOR_STOCK) {
+                    navController.navigate(Routes.COLABORADOR_STOCK) {
+                        popUpTo(Routes.COLABORADOR_DASHBOARD) { saveState = true }
                     }
                 }
             }
@@ -53,13 +53,13 @@ fun BottomBar(navController: NavController) {
         // 3. CANDIDATURAS
         NavigationBarItem(
             icon = { Icon(Icons.Default.List, contentDescription = "Pedidos") },
-            label = { Text("Pedidos") },
-            selected = currentRoute == Routes.STAFF_CANDIDATURA, // Vamos criar esta rota já a seguir
+            label = { Text("Candidaturas") },
+            selected = currentRoute == Routes.COLABORADOR_CANDIDATURA, // Vamos criar esta rota já a seguir
             colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen, selectedTextColor = IPCAGreen, indicatorColor = IPCAGreen.copy(alpha = 0.1f)),
             onClick = {
-                if (currentRoute != Routes.STAFF_CANDIDATURA) {
-                    navController.navigate(Routes.STAFF_CANDIDATURA) {
-                        popUpTo(Routes.STAFF_DASHBOARD) { saveState = true }
+                if (currentRoute != Routes.COLABORADOR_CANDIDATURA) {
+                    navController.navigate(Routes.COLABORADOR_CANDIDATURA) {
+                        popUpTo(Routes.COLABORADOR_DASHBOARD) { saveState = true }
                     }
                 }
             }
@@ -68,13 +68,13 @@ fun BottomBar(navController: NavController) {
         // 4. BENEFICIÁRIOS
         NavigationBarItem(
             icon = { Icon(Icons.Default.Person, contentDescription = "Benefic.") },
-            label = { Text("Benefic.") },
-            selected = currentRoute == Routes.STAFF_BENEFICIARIOS,
+            label = { Text("Beneficiários") },
+            selected = currentRoute == Routes.COLABORADOR_BENEFICIARIOS,
             colors = NavigationBarItemDefaults.colors(selectedIconColor = IPCAGreen, selectedTextColor = IPCAGreen, indicatorColor = IPCAGreen.copy(alpha = 0.1f)),
             onClick = {
-                if (currentRoute != Routes.STAFF_BENEFICIARIOS) {
-                    navController.navigate(Routes.STAFF_BENEFICIARIOS) {
-                        popUpTo(Routes.STAFF_DASHBOARD) { saveState = true }
+                if (currentRoute != Routes.COLABORADOR_BENEFICIARIOS) {
+                    navController.navigate(Routes.COLABORADOR_BENEFICIARIOS) {
+                        popUpTo(Routes.COLABORADOR_DASHBOARD) { saveState = true }
                     }
                 }
             }

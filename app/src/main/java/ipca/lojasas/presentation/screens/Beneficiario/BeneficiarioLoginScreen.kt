@@ -1,6 +1,7 @@
-package ipca.lojasas.presentation.screens.Students
+package ipca.lojasas.presentation.screens.Beneficiario
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -26,34 +27,26 @@ import ipca.lojasas.ui.theme.IPCAGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StudentLoginScreen(navController: NavController) {
+fun BeneficiarioLoginScreen(navController: NavController) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val auth = FirebaseAuth.getInstance()
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Login Beneficiário", color = Color.White) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                    }
-                },
+                title = { Text("Acesso Beneficiário", color = Color.White) },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.Default.ArrowBack, null, tint = Color.White) } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = IPCAGreen)
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.padding(padding).fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text("Bem-vindo de volta", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = IPCAGreen)
             Spacer(modifier = Modifier.height(32.dp))
@@ -66,7 +59,6 @@ fun StudentLoginScreen(navController: NavController) {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
             )
             Spacer(modifier = Modifier.height(16.dp))
-
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -74,48 +66,39 @@ fun StudentLoginScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff, null)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+                    val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) { Icon(image, null) }
+                }
             )
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
                     if (email.isNotEmpty() && password.isNotEmpty()) {
-                        isLoading = true
                         auth.signInWithEmailAndPassword(email, password)
-                            .addOnCompleteListener { task ->
-                                isLoading = false
-                                if (task.isSuccessful) {
-                                    // SUCESSO: Vai para o Dashboard
-                                    navController.navigate(Routes.STUDENT_DASHBOARD) {
-                                        popUpTo(Routes.CHOICE) { inclusive = false }
-                                    }
-                                } else {
-                                    Toast.makeText(context, "Erro: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
-                                }
+                            .addOnSuccessListener {
+                                navController.navigate(Routes.BENEFICIARIO_DASHBOARD) { popUpTo(Routes.CHOICE) { inclusive = true } }
                             }
-                    } else {
-                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                            .addOnFailureListener {
+                                Toast.makeText(context, "Erro: ${it.message}", Toast.LENGTH_SHORT).show()
+                            }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen),
-                enabled = !isLoading
-            ) {
-                if (isLoading) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("Entrar", fontSize = 18.sp)
-            }
+                colors = ButtonDefaults.buttonColors(containerColor = IPCAGreen)
+            ) { Text("Entrar") }
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Candidatura aprovada?", fontSize = 14.sp)
-                TextButton(onClick = { navController.navigate("student_register") }) {
-                    Text("Cria a tua password aqui", fontWeight = FontWeight.Bold, color = IPCAGreen)
-                }
+            Row {
+                Text("Candidatura aprovada? ", fontSize = 12.sp)
+                Text(
+                    "Cria a tua password aqui",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = IPCAGreen,
+                    modifier = Modifier.clickable { navController.navigate(Routes.BENEFICIARIO_REGISTER) }
+                )
             }
         }
     }
