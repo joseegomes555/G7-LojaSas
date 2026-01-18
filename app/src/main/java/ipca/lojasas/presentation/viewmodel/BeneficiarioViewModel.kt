@@ -31,8 +31,13 @@ class BeneficiarioViewModel(
     private val _meusPedidos = MutableStateFlow<List<Pedido>>(emptyList())
     val meusPedidos = _meusPedidos.asStateFlow()
 
+    // --- CORRIGIDO: Voltei a chamar _perfilUser para não dar erro no Dashboard ---
     private val _perfilUser = MutableStateFlow<Map<String, Any>?>(null)
     val perfilUser = _perfilUser.asStateFlow()
+    // ---------------------------------------------------------------------------
+
+    private val _estadoCandidatura = MutableStateFlow<String?>(null)
+    val estadoCandidatura = _estadoCandidatura.asStateFlow()
 
     private val _carrinho = mutableStateMapOf<String, Int>()
     val carrinho: Map<String, Int> get() = _carrinho
@@ -43,9 +48,14 @@ class BeneficiarioViewModel(
 
     private fun carregarDados() {
         val uid = auth.currentUser?.uid ?: return
+
+        // Aqui usamos _perfilUser
         viewModelScope.launch { useCases.getPerfil(uid).collect { _perfilUser.value = it } }
+
+        viewModelScope.launch { useCases.getEstadoCandidatura(uid).collect { _estadoCandidatura.value = it } }
         viewModelScope.launch { useCases.getMeusPedidos(uid).collect { _meusPedidos.value = it } }
         viewModelScope.launch { useCases.getCatalogo().collect { _produtos.value = it } }
+
         viewModelScope.launch {
             useCases.getStock().collect { lotes ->
                 val mapTemp = mutableMapOf<String, Int>()
@@ -83,9 +93,9 @@ class BeneficiarioViewModel(
 
     fun submeterPedido(itens: List<ItemPedido>, urgencia: String, dataLev: Date, onRes: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return
-        val perfil = _perfilUser.value
-        val nome = perfil?.get("nome") as? String ?: "Beneficiário"
-        val num = perfil?.get("numEstudante") as? String ?: ""
+        val perfilData = _perfilUser.value // <--- Usa _perfilUser
+        val nome = perfilData?.get("nome") as? String ?: "Beneficiário"
+        val num = (perfilData?.get("numBeneficiario") ?: perfilData?.get("numEstudante")) as? String ?: ""
 
         val pedido = Pedido(
             uid = uid,
@@ -107,18 +117,13 @@ class BeneficiarioViewModel(
     }
 
     fun cancelarPedido(id: String, motivo: String) {
-        viewModelScope.launch {
-            useCases.cancelarPedido(id, motivo)
-        }
+        viewModelScope.launch { useCases.cancelarPedido(id, motivo) }
     }
 
     fun aceitarReagendamento(pedidoId: String, novaData: Timestamp) {
-        viewModelScope.launch {
-            useCases.aceitarReagendamento(pedidoId, novaData)
-        }
+        viewModelScope.launch { useCases.aceitarReagendamento(pedidoId, novaData) }
     }
 
-    // FUNÇÃO PARA FOTO
     fun uploadFoto(bitmap: Bitmap, onRes: (Boolean) -> Unit) {
         val uid = auth.currentUser?.uid ?: return
         useCases.uploadFoto(bitmap, uid, onRes)

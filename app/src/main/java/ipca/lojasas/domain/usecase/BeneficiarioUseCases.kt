@@ -6,6 +6,8 @@ import ipca.lojasas.domain.repository.LojaRepository
 import kotlinx.coroutines.flow.Flow
 import com.google.firebase.Timestamp
 
+// --- USE CASES ESPECÍFICOS DO BENEFICIÁRIO (Que não estão no Shared) ---
+
 class GetMeusPedidosUseCase(private val repository: LojaRepository) {
     operator fun invoke(uid: String): Flow<List<Pedido>> = repository.getMeusPedidos(uid)
 }
@@ -23,6 +25,11 @@ class AceitarReagendamentoUseCase(private val repository: LojaRepository) {
     suspend operator fun invoke(id: String, novaData: Timestamp) = repository.aceitarReagendamento(id, novaData)
 }
 
+class GetEstadoCandidaturaUseCase(private val repository: LojaRepository) {
+    operator fun invoke(uid: String) = repository.getEstadoCandidatura(uid)
+}
+
+// --- DATA CLASS AGREGADORA ---
 data class BeneficiarioUseCases(
     val getMeusPedidos: GetMeusPedidosUseCase,
     val fazerPedido: FazerPedidoUseCase,
@@ -31,5 +38,6 @@ data class BeneficiarioUseCases(
     val getPerfil: GetPerfilUseCase,
     val getCatalogo: GetCatalogoUseCase,
     val getStock: GetStockUseCase,
-    val aceitarReagendamento: AceitarReagendamentoUseCase
+    val aceitarReagendamento: AceitarReagendamentoUseCase,
+    val getEstadoCandidatura: GetEstadoCandidaturaUseCase
 )

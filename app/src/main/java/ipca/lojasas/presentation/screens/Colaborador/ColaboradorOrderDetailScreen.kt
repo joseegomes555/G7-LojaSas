@@ -1,5 +1,8 @@
 package ipca.lojasas.presentation.screens.Colaborador
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Email // Import para o ícone de Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import ipca.lojasas.di.AppModule
 import ipca.lojasas.domain.model.Pedido
 import ipca.lojasas.presentation.viewmodel.ColaboradorViewModel
@@ -76,12 +81,11 @@ fun ColaboradorOrderDetailScreen(
         }
     ) { padding ->
         if (pedido == null) {
-            // Loading state enquanto o pedido não é encontrado
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 if (todosPedidos.isEmpty()) {
-                    CircularProgressIndicator(color = IPCAGreen) // Ainda a carregar lista
+                    CircularProgressIndicator(color = IPCAGreen)
                 } else {
-                    Text("Pedido não encontrado.") // Lista carregada mas pedido não existe
+                    Text("Pedido não encontrado.")
                 }
             }
         } else {
@@ -139,6 +143,7 @@ fun ColaboradorOrderDetailScreen(
                         }
                     }
                 } else {
+                    // ESTADO NÃO PENDENTE (Entregue, Cancelado, etc)
                     Card(
                         colors = CardDefaults.cardColors(containerColor = if(pedido.estado == "Cancelado") IPCARed else IPCAGreen),
                         modifier = Modifier.fillMaxWidth()
@@ -149,8 +154,70 @@ fun ColaboradorOrderDetailScreen(
                             modifier = Modifier.padding(16.dp), fontSize = 18.sp
                         )
                     }
+
+                    // --- BOTÃO DE RELATÓRIO (APENAS SE ENTREGUE) ---
+                    if (pedido.estado == "Entregue") {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = {
+                                // Chama a função que está definida lá em baixo
+                                enviarRelatorioPorEmail(context, pedido)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
+                        ) {
+                            Icon(Icons.Default.Email, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Enviar Relatório por Email")
+                        }
+                    }
+                    // -----------------------------------------------
                 }
             }
         }
+    }
+}
+
+// --- FUNÇÃO AUXILIAR (FORA DA CLASSE) ---
+fun enviarRelatorioPorEmail(context: Context, pedido: Pedido) {
+    val emailColaborador = FirebaseAuth.getInstance().currentUser?.email ?: ""
+
+    val assunto = "Relatório de Entrega - Pedido #${pedido.id.take(4).uppercase()}"
+
+    val itensTexto = pedido.itens.joinToString(separator = "\n") { "- ${it.nome}: ${it.quantidade} un" }
+
+    val corpoEmail = """
+        RELATÓRIO DE ENTREGA - LOJA SOCIAL SAS
+        --------------------------------------
+        ID Pedido: ${pedido.id}
+        Data do Pedido: ${pedido.dataPedido?.toDate() ?: "N/A"}
+        
+        DADOS DO BENEFICIÁRIO
+        Nome: ${pedido.nomeBeneficiario}
+        Nº Mecanográfico: ${pedido.numBeneficiario}
+        Email: ${pedido.email}
+        
+        DETALHES DA ENTREGA
+        Estado Atual: ${pedido.estado}
+        Entregue por: $emailColaborador
+        
+        LISTA DE BENS:
+        $itensTexto
+        
+        --------------------------------------
+        Processado pela App Loja Social SAS
+    """.trimIndent()
+
+    val intent = Intent(Intent.ACTION_SENDTO).apply {
+        data = Uri.parse("mailto:") // Garante que abre apenas apps de email
+        putExtra(Intent.EXTRA_EMAIL, arrayOf(emailColaborador)) // Envia para si mesmo
+        putExtra(Intent.EXTRA_SUBJECT, assunto)
+        putExtra(Intent.EXTRA_TEXT, corpoEmail)
+    }
+
+    try {
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        Toast.makeText(context, "Nenhuma app de email encontrada.", Toast.LENGTH_SHORT).show()
     }
 }

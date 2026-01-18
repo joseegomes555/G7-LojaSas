@@ -29,10 +29,11 @@ import ipca.lojasas.presentation.screens.Colaborador.StockScreen
 import ipca.lojasas.presentation.screens.Beneficiario.BeneficiariosScreen
 import ipca.lojasas.presentation.screens.Beneficiario.BeneficiarioDetailScreen
 import ipca.lojasas.presentation.screens.Colaborador.ColaboradorCandidaturasScreen
+import ipca.lojasas.presentation.screens.Colaborador.ColaboradorHistoryScreen // <--- NOVO IMPORT
 
 object Routes {
     const val CHOICE = "choice"
-    const val CANDIDACY = "candidacy" // A rota que estava a faltar
+    const val CANDIDACY = "candidacy"
 
     // Auth
     const val BENEFICIARIO_LOGIN = "beneficiario_login"
@@ -93,6 +94,12 @@ class MainActivity : ComponentActivity() {
                             onLogout = { navController.navigate(Routes.CHOICE) { popUpTo(0) } }
                         )
                     }
+
+                    // --- NOVA ROTA: HISTÓRICO ---
+                    composable("colaborador_history") {
+                        ColaboradorHistoryScreen(navController = navController)
+                    }
+                    // ----------------------------
 
                     composable(Routes.COLABORADOR_STOCK) { StockScreen(navController) }
                     composable(Routes.COLABORADOR_BENEFICIARIOS) { BeneficiariosScreen(navController) }

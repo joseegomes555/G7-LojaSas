@@ -29,7 +29,8 @@ object AppModule {
             getPerfil = GetPerfilUseCase(repository),
             getCatalogo = GetCatalogoUseCase(repository),
             getStock = GetStockUseCase(repository),
-            aceitarReagendamento = AceitarReagendamentoUseCase(repository)
+            aceitarReagendamento = AceitarReagendamentoUseCase(repository),
+            getEstadoCandidatura = GetEstadoCandidaturaUseCase(repository)
         )
     }
 
